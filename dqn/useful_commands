@@ -1,0 +1,17 @@
+#!/bin/bash  
+echo "Running docker container"
+
+# Create container
+docker run -p 8888:8888 -it --name=dqntest --volume=/home/nsilva/gitrepos/projectappia/dqn:/shared projectappia/dqn:latest-cpu
+
+# Start already created container
+docker start -ai dqntest
+
+# Access container bash
+docker exec -it dqntest1 bash
+
+# Create virtual screen to allow
+xvfb-run -s "-screen 0 1400x900x24" bash
+
+# run dqn test as in https://github.com/devsisters/DQN-tensorflow
+python main.py --is_train=False --display=True --use_gpu=False

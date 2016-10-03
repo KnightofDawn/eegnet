@@ -2,9 +2,10 @@ version: '2'
 services:
   eegnet:
     container_name: eegnet 
-    image: projectappia/dqn:latest-cpu
+    build: ./dqn/ 
+    image: projectappia/dqn:latest-cpu 
     ports:
      - "6006:6006"
      - "8888:8888"
     volumes:
-     - .:/shared
+     - ./ipynb:/shared
