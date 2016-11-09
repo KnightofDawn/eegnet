@@ -7,4 +7,4 @@ services:
      - "6006:6006"
      - "8888:8888"
     volumes:
-     - ./ipynb:/shared
+     - ./:/shared
