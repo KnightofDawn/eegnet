@@ -16,11 +16,12 @@ def preprocess_dataset(data,
     data = tf.reshape(data, shape=[num_points, num_channels])
     data = tf.pack(tf.split(0, num_splits, data), axis=0)
     
-    # Remove dropout segments (flow controlled by flag)
+    # Detect dropout segments (flow controlled by flag)
     _, var = tf.nn.moments(data, axes=[1, 2])
-    # 'tf.where' returns a 2D Tensor. reshape it to 1D.
+    # 'indexes > sigma threshold: tf.where' returns a 2D Tensor. reshape it to 1D.
     idx_clean = tf.reshape(tf.where(tf.greater(var, sigma_threshold)), shape=[-1])
-    # gather from data only indexes > sigma threshold
+    
+    # Remove dropout segments
     rem_dropouts_fn = lambda: tf.gather(data, idx_clean)
     id_fn = lambda: data
     # decide removal based on flag
@@ -50,7 +51,8 @@ def read_dataset(filenames,
                  num_splits=10,
                  rem_dropouts=True,
                  sigma_threshold=0.5,
-                 batch_size=16):
+                 batch_size=16, 
+                 shuffle=True):
     
     tf.logging.info("Reading #%d files." % len(filenames))
 
@@ -83,7 +85,7 @@ def read_dataset(filenames,
         items_to_descriptions=items_to_descriptions)
 
     data_provider = slim.dataset_data_provider.DatasetDataProvider(dataset, 
-                                                                   shuffle=True, 
+                                                                   shuffle=shuffle, 
                                                                    num_epochs=None, 
                                                                    common_queue_capacity=40, 
                                                                    common_queue_min=20)
@@ -96,10 +98,19 @@ def read_dataset(filenames,
                                      sigma_threshold)
 
     ## Batch it up.
-    data, label = tf.train.shuffle_batch([data, label], 
-                                         batch_size=batch_size, 
-                                         capacity=40*num_splits, 
-                                         min_after_dequeue=20*num_splits, 
-                                         num_threads=1, 
-                                         enqueue_many=True)
+    shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label], 
+                                                      batch_size=batch_size, 
+                                                      capacity=4*num_splits*batch_size, 
+                                                      min_after_dequeue=3*num_splits*batch_size, 
+                                                      num_threads=1, 
+                                                      enqueue_many=True)
+    
+    batch_fn = lambda: tf.train.batch([data, label], 
+                                      batch_size=batch_size, 
+                                      capacity=5*num_splits*batch_size, 
+                                      num_threads=1, 
+                                      enqueue_many=True)
+    
+    data, label = slim.utils.smart_cond(shuffle, shuffle_batch_fn, batch_fn)
+    
     return data, label
