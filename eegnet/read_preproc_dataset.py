@@ -9,8 +9,7 @@ def preprocess_dataset(data,
                        num_channels,
                        num_labels,
                        num_splits,
-                       rem_dropouts,
-                       sigma_threshold):
+                       rem_dropouts):
     
     # Split data into smaller segments (speeds up trainning)
     data = tf.reshape(data, shape=[num_points, num_channels])
@@ -19,7 +18,7 @@ def preprocess_dataset(data,
     # Detect dropout segments (flow controlled by flag)
     _, var = tf.nn.moments(data, axes=[1, 2])
     # 'indexes > sigma threshold: tf.where' returns a 2D Tensor. reshape it to 1D.
-    idx_clean = tf.reshape(tf.where(tf.greater(var, sigma_threshold)), shape=[-1])
+    idx_clean = tf.reshape(tf.where(tf.greater(var, 0.5)), shape=[-1])
     
     # Remove dropout segments
     rem_dropouts_fn = lambda: tf.gather(data, idx_clean)
@@ -32,11 +31,11 @@ def preprocess_dataset(data,
     num_segments = tf.shape(data)[0]
     label = tf.reshape(tf.tile(label, [num_segments]), shape=[num_segments, num_labels])
     
-    # Normalize mean=0 and sigma=0.25
+    # Normalize mean=0 and sigma=0.5
     data_mean = tf.expand_dims(tf.reduce_mean(data, reduction_indices=[1]), dim=1)
     data = tf.sub(data, data_mean)
     data_max = tf.expand_dims(tf.reduce_max(tf.abs(data), reduction_indices=[1]), dim=1)
-    data = tf.div(data, tf.mul(4.0, data_max))
+    data = tf.div(data, tf.mul(2.0, data_max))
     
     # 4D tensor with height = 1: [batch, height, width, channels]
     data = tf.expand_dims(data, dim=1)
@@ -50,7 +49,6 @@ def read_dataset(filenames,
                  num_labels=2,
                  num_splits=10,
                  rem_dropouts=True,
-                 sigma_threshold=0.5,
                  batch_size=16, 
                  shuffle=True):
     
@@ -93,9 +91,13 @@ def read_dataset(filenames,
     data, label = data_provider.get(['data', 'label'])
 
     ## Preprocess
-    data, label = preprocess_dataset(data, label, num_points, num_channels, 
-                                     num_labels, num_splits, rem_dropouts, 
-                                     sigma_threshold)
+    data, label = preprocess_dataset(data, 
+                                     label, 
+                                     num_points, 
+                                     num_channels, 
+                                     num_labels, 
+                                     num_splits, 
+                                     rem_dropouts)
 
     ## Batch it up.
     shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label], 

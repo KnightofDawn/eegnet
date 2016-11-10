@@ -10,7 +10,7 @@ import read_preproc_dataset as read
 # Directories
 #
 
-tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train/*', 
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train_small/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
 tf.app.flags.DEFINE_string('log_dir', '/shared/logs/',
@@ -26,14 +26,11 @@ tf.app.flags.DEFINE_integer('file_num_points', 240000,
 tf.app.flags.DEFINE_integer('file_num_channels', 16,
                             'Sensor channels in each TFReader file.')
 
-tf.app.flags.DEFINE_integer('file_num_splits', 400,
+tf.app.flags.DEFINE_integer('file_num_splits', 1200,
                             'Splits to perform on each TFReader file.')
 
 tf.app.flags.DEFINE_boolean('file_remove_dropouts', True,
                             'Remove or Not dropouts from input data.')
-
-tf.app.flags.DEFINE_float('sigma_threshold', 0.5,
-                          'Standard deviation threshold under which file is considered dropout.')
 
 tf.app.flags.DEFINE_integer('batch_size', 16,
                             'Number of splits/files in each batch to the network.')
@@ -86,7 +83,6 @@ def main(_):
                                                      num_labels=FLAGS.num_labels,
                                                      num_splits=FLAGS.file_num_splits,
                                                      rem_dropouts=FLAGS.file_remove_dropouts,
-                                                     sigma_threshold=FLAGS.sigma_threshold,
                                                      batch_size=FLAGS.batch_size,
                                                      shuffle=FLAGS.shuffle)
         shape = train_data.get_shape().as_list()
@@ -129,9 +125,9 @@ def main(_):
                                          is_chief=True, 
                                          number_of_steps=25001, 
                                          init_fn=get_init_fn(), 
-                                         save_summaries_secs=300, 
-                                         save_interval_secs=2*3600, 
-                                         trace_every_n_steps=3600, 
+                                         save_summaries_secs=5*60, 
+                                         save_interval_secs=15*60, 
+                                         trace_every_n_steps=30*60, 
                                         )
     
     

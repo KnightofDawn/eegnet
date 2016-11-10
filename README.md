@@ -8,3 +8,7 @@ After cloning the repository, run the following docker command:
 If docker-compose isn't available 
    
     pip install docker-compose
+
+
+Alternatively:
+docker run -p 6006:6006 -p 8888:8888 -it --name=eegnet --volume=YOUR_GITREPO_PATH:/shared projectappia/eegnet:latest
