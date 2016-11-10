@@ -61,35 +61,13 @@ def eegnet_v1(inputs,
                         # Add to skip connections
                         skip = tf.add(skip, hidden)
                         # Add layer input and residual -> input for next layer
-                        hidden = tf.add(hidden, layer_input)
-                        
-                    with tf.variable_scope('layer3'):
-                        layer_input = hidden
-                        # Compress layer input features
-                        hidden = slim.conv2d(hidden, 16, 1, scope='1x1compress')
-                        # Dilated convolution. NO nonlinear and batch norm!
-                        hidden = slim.conv2d(hidden, 8, [1, 3], rate=8, normalizer_fn=None, 
-                                             activation_fn=None, scope='dilconv')
-                        # Split features in half
-                        filtr, gate = tf.split(3, 2, hidden)
-                        # Apply nonlinear functions and batch_norm
-                        hidden = tf.mul(tf.tanh(filtr), tf.sigmoid(gate), name='filterXgate')
-                        hidden = slim.batch_norm(hidden, scope='norm_filterXgate')
-                        # 1x1 Residual extraction. NO nonlinear and batch norm!
-                        hidden = slim.conv2d(hidden, layer_input.get_shape()[3], 1, 
-                                             normalizer_fn=None, activation_fn=None, scope='1x1toRes')
-                        # Add to skip connections
-                        skip = tf.add(skip, hidden)
-                        # Add layer input and residual -> input for next layer
-                        hidden = tf.add(hidden, layer_input)
-                        
-                   
+                        hidden = tf.add(hidden, layer_input)                   
 
                 with tf.variable_scope('skip_processing'):
                     hidden = tf.nn.relu(skip)
                     batch_num_points = hidden.get_shape().as_list()[2]
-                    hidden = slim.avg_pool2d(hidden, [1, batch_num_points*2//2400], 
-                                             [1, batch_num_points//2400])
+                    hidden = slim.avg_pool2d(hidden, [1, batch_num_points*2//200], 
+                                             [1, batch_num_points//200])
                     # 1 x 2400 x 32
                     hidden = slim.conv2d(hidden, 4, 1, scope='1x1compress')
                     hidden = slim.conv2d(hidden, 2, [1, 5], stride=3, scope='1x5reduce')
