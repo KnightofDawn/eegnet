@@ -3,14 +3,14 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-def eegnet_v1(inputs,
+def eegnet_v2(inputs,
               num_labels=2,
               weight_decay=0.00004,
               reuse=None, 
               is_training=True,
-              scope='eegnet_v1'):
+              scope='eegnet_v2'):
     
-    with tf.variable_scope(scope, 'eegnet_v1', reuse=reuse):
+    with tf.variable_scope(scope, 'eegnet_v2', reuse=reuse):
         
         with slim.arg_scope([slim.batch_norm, slim.dropout], is_training=is_training):
             with slim.arg_scope([slim.conv2d, slim.fully_connected], 

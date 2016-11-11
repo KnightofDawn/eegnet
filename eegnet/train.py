@@ -3,14 +3,14 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-import eegnet_v1 as network
+from eegnet_v2 import eegnet_v2 as network
 import read_preproc_dataset as read
 
 ##
 # Directories
 #
 
-tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train_small/*.tfr', 
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
 tf.app.flags.DEFINE_string('log_dir', '/shared/logs/',
@@ -88,11 +88,15 @@ def main(_):
         shape = train_data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
         
+        # Batch mixture: true labels / total labels
+        mix = tf.div(tf.to_float(tf.reduce_sum(train_labels, 0)[1]), batch_size=FLAGS.batch_size)
+        tf.scalar_summary('batch_stats/Train batch mixture', mix)
+        
         # Create model   
-        logits, predictions = network.eegnet_v1(train_data,
-                                                num_labels=FLAGS.num_labels,
-                                                weight_decay=FLAGS.weight_decay,
-                                                is_training=True)
+        logits, predictions = network(train_data,
+                                      num_labels=FLAGS.num_labels,
+                                      weight_decay=FLAGS.weight_decay,
+                                      is_training=True)
         tf.logging.info('Network model created.')
 
         # Add histograms for trainable variables.
@@ -121,13 +125,13 @@ def main(_):
         # Run the training
         final_loss = slim.learning.train(train_op,
                                          logdir=FLAGS.log_dir, 
-                                         log_every_n_steps=1, 
+                                         log_every_n_steps=10, 
                                          is_chief=True, 
-                                         number_of_steps=25001, 
+                                         number_of_steps=15001, 
                                          init_fn=get_init_fn(), 
-                                         save_summaries_secs=5*60, 
+                                         save_summaries_secs=5, 
                                          save_interval_secs=15*60, 
-                                         trace_every_n_steps=30*60, 
+                                         trace_every_n_steps=None, 
                                         )
     
     
