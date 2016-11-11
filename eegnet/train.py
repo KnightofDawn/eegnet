@@ -89,7 +89,7 @@ def main(_):
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
         
         # Batch mixture: true labels / total labels
-        mix = tf.div(tf.to_float(tf.reduce_sum(train_labels, 0)[1]), batch_size=FLAGS.batch_size)
+        mix = tf.div(tf.to_float(tf.reduce_sum(train_labels, 0)[1]), FLAGS.batch_size)
         tf.scalar_summary('batch_stats/Train batch mixture', mix)
         
         # Create model   
