@@ -3,14 +3,14 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-from eegnet_v2 import eegnet_v2 as network
-import read_preproc_dataset as read
+from eegnet_v1 import eegnet_v1 as network
+from read_preproc_dataset import read_dataset
 
 ##
 # Directories
 #
 
-tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train/*.tfr', 
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train_small2/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
 tf.app.flags.DEFINE_string('log_dir', '/shared/logs/',
@@ -26,13 +26,13 @@ tf.app.flags.DEFINE_integer('file_num_points', 240000,
 tf.app.flags.DEFINE_integer('file_num_channels', 16,
                             'Sensor channels in each TFReader file.')
 
-tf.app.flags.DEFINE_integer('file_num_splits', 1200,
+tf.app.flags.DEFINE_integer('file_num_splits', 600,
                             'Splits to perform on each TFReader file.')
 
 tf.app.flags.DEFINE_boolean('file_remove_dropouts', True,
                             'Remove or Not dropouts from input data.')
 
-tf.app.flags.DEFINE_integer('batch_size', 16,
+tf.app.flags.DEFINE_integer('batch_size', 32,
                             'Number of splits/files in each batch to the network.')
 
 tf.app.flags.DEFINE_boolean('shuffle', True,
@@ -77,57 +77,53 @@ def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
     with tf.Graph().as_default():
         # Input pipeline
-        train_data, train_labels = read.read_dataset(tf.gfile.Glob(FLAGS.dataset_dir), 
-                                                     num_points=FLAGS.file_num_points,
-                                                     num_channels=FLAGS.file_num_channels,
-                                                     num_labels=FLAGS.num_labels,
-                                                     num_splits=FLAGS.file_num_splits,
-                                                     rem_dropouts=FLAGS.file_remove_dropouts,
-                                                     batch_size=FLAGS.batch_size,
-                                                     shuffle=FLAGS.shuffle)
-        shape = train_data.get_shape().as_list()
+        data, labels = read_dataset(tf.gfile.Glob(FLAGS.dataset_dir), 
+                                    num_points=FLAGS.file_num_points,
+                                    num_channels=FLAGS.file_num_channels,
+                                    num_labels=FLAGS.num_labels,
+                                    num_splits=FLAGS.file_num_splits,
+                                    rem_dropouts=FLAGS.file_remove_dropouts,
+                                    batch_size=FLAGS.batch_size,
+                                    shuffle=FLAGS.shuffle)
+        shape = data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
         
-        # Batch mixture: true labels / total labels
-        mix = tf.div(tf.to_float(tf.reduce_sum(train_labels, 0)[1]), FLAGS.batch_size)
-        tf.scalar_summary('batch_stats/Train batch mixture', mix)
-        
         # Create model   
-        logits, predictions = network(train_data,
+        logits, predictions = network(data,
                                       num_labels=FLAGS.num_labels,
                                       weight_decay=FLAGS.weight_decay,
                                       is_training=True)
         tf.logging.info('Network model created.')
 
+        # Specify loss
+        slim.losses.softmax_cross_entropy(logits, labels, scope='loss')
+        total_loss = slim.losses.get_total_loss()
+        # Summarize loss
+        tf.scalar_summary('losses/Total loss', total_loss)
+        
+        # Optimizer and training op
+        optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, epsilon=1e-4)
+        train_op = slim.learning.create_train_op(total_loss, optimizer)
+        
         # Add histograms for trainable variables.
         for var in tf.trainable_variables():
             tf.histogram_summary(var.op.name, var)
 
-        # Add summaries for activations: NOT WORKING YET. TF ERROR.
-        #slim.summarize_activations()
-
-        # Specify loss
-        slim.losses.softmax_cross_entropy(logits, train_labels, scope='loss')
-        total_loss = slim.losses.get_total_loss()
-        # Summarize loss
-        tf.scalar_summary('losses/Total loss', total_loss)
-
-        # Optimizer and training op
-        optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, epsilon=1e-4)
-        train_op = slim.learning.create_train_op(total_loss, optimizer)
-
-        # Train accuracy
+        # Batch accuracy
         train_predictions = tf.one_hot(tf.argmax(predictions, 1), FLAGS.num_labels, dtype=tf.int32)
-        train_accuracy = slim.metrics.accuracy(train_predictions, train_labels, 100.0)
-        # Summarize train accuracy
-        tf.scalar_summary('accuracy/Train batch accuracy', train_accuracy)
+        train_accuracy = slim.metrics.accuracy(train_predictions, labels, 100.0)
+        tf.scalar_summary('batch_stats/accuracy', train_accuracy)
+        
+        # Batch mixture: true labels / total labels
+        mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)[1]), FLAGS.batch_size)
+        tf.scalar_summary('batch_stats/labels ratio', mix)
 
         # Run the training
         final_loss = slim.learning.train(train_op,
                                          logdir=FLAGS.log_dir, 
                                          log_every_n_steps=10, 
                                          is_chief=True, 
-                                         number_of_steps=15001, 
+                                         number_of_steps=25001, 
                                          init_fn=get_init_fn(), 
                                          save_summaries_secs=5, 
                                          save_interval_secs=15*60, 
