@@ -8,7 +8,7 @@ from read_preproc_dataset import read_dataset
 
 ##
 # Directories
-#
+##
 
 tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/train_small2/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
@@ -23,33 +23,18 @@ tf.app.flags.DEFINE_string('log_dir', '/shared/logs/',
 # TFReaders configuration
 ##
 
-tf.app.flags.DEFINE_integer('file_num_points', 240000,
-                            'Data points in each TFReader file.')
-
-tf.app.flags.DEFINE_integer('file_num_channels', 16,
-                            'Sensor channels in each TFReader file.')
-
 tf.app.flags.DEFINE_integer('file_num_splits', 600,
                             'Splits to perform on each TFReader file.')
 
-tf.app.flags.DEFINE_boolean('file_remove_dropouts', True,
-                            'Remove or Not dropouts from input data.')
-
 tf.app.flags.DEFINE_integer('batch_size', 32,
                             'Number of splits/files in each batch to the network.')
-
-tf.app.flags.DEFINE_boolean('shuffle', True,
-                            'Shuffle input data or not.')
 
 ##
 # Network configuration
 ##
 
-tf.app.flags.DEFINE_integer('num_labels', 2,
-                            'Labels/classes being classified. 0 - Interictal | 1 - Preictal')
-
-tf.app.flags.DEFINE_float('weight_decay', 0.00004,
-                            'Convolutional filter width.')
+tf.app.flags.DEFINE_boolean('is_training', True,
+                            'Determines shuffling, dropout and batch norm behaviour and dropout removal.')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -81,21 +66,14 @@ def main(_):
     with tf.Graph().as_default():
         # Input pipeline
         data, labels = read_dataset(tf.gfile.Glob(FLAGS.dataset_dir), 
-                                    num_points=FLAGS.file_num_points,
-                                    num_channels=FLAGS.file_num_channels,
-                                    num_labels=FLAGS.num_labels,
                                     num_splits=FLAGS.file_num_splits,
-                                    rem_dropouts=FLAGS.file_remove_dropouts,
                                     batch_size=FLAGS.batch_size,
-                                    shuffle=FLAGS.shuffle)
+                                    is_training=FLAGS.is_training)
         shape = data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
         
         # Create model   
-        logits, predictions = network(data,
-                                      num_labels=FLAGS.num_labels,
-                                      weight_decay=FLAGS.weight_decay,
-                                      is_training=True)
+        logits, predictions = network(data, is_training=FLAGS.is_training)
         tf.logging.info('Network model created.')
 
         # Specify loss
@@ -109,11 +87,11 @@ def main(_):
         train_op = slim.learning.create_train_op(total_loss, optimizer)
         
         # Add histograms for trainable variables.
-        for var in tf.trainable_variables():
+        for var in slim.get_model_variables():
             tf.histogram_summary(var.op.name, var)
 
         # Batch accuracy
-        train_predictions = tf.one_hot(tf.argmax(predictions, 1), FLAGS.num_labels, dtype=tf.int32)
+        train_predictions = tf.one_hot(tf.argmax(predictions, 1), 2, dtype=tf.int32)
         train_accuracy = slim.metrics.accuracy(train_predictions, labels, 100.0)
         tf.scalar_summary('batch_stats/accuracy', train_accuracy)
         

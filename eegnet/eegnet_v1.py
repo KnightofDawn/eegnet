@@ -4,7 +4,6 @@ slim = tf.contrib.slim
 
 
 def eegnet_v1(inputs,
-              num_labels=2,
               weight_decay=0.00004,
               reuse=None, 
               is_training=True,
@@ -165,7 +164,7 @@ def eegnet_v1(inputs,
                     
                     hidden = slim.dropout(hidden, 0.8)
                     
-                    logits = slim.fully_connected(hidden, num_labels, normalizer_fn=None, 
+                    logits = slim.fully_connected(hidden, 2, normalizer_fn=None, 
                                                   activation_fn=None, scope='logits')
                     predictions = tf.nn.softmax(logits)
                         
