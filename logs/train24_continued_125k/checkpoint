@@ -1,0 +1,6 @@
+model_checkpoint_path: "/shared/logs/train24_continued_125k/model.ckpt-125001"
+all_model_checkpoint_paths: "/shared/logs/train24_continued_125k/model.ckpt-114897"
+all_model_checkpoint_paths: "/shared/logs/train24_continued_125k/model.ckpt-117557"
+all_model_checkpoint_paths: "/shared/logs/train24_continued_125k/model.ckpt-120168"
+all_model_checkpoint_paths: "/shared/logs/train24_continued_125k/model.ckpt-122794"
+all_model_checkpoint_paths: "/shared/logs/train24_continued_125k/model.ckpt-125001"
