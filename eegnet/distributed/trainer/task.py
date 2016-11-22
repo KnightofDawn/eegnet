@@ -26,10 +26,10 @@ tf.app.flags.DEFINE_string('log_dir', '/content/logs/gcloud_test/',
 # TFReaders configuration
 ##
 
-tf.app.flags.DEFINE_integer('file_num_splits', 50,
+tf.app.flags.DEFINE_integer('file_num_splits', 5,
                             'Splits to perform on each TFReader file.')
 
-tf.app.flags.DEFINE_integer('batch_size', 16,
+tf.app.flags.DEFINE_integer('batch_size', 3,
                             'Number of splits/files in each batch to the network.')
 
 ##
@@ -148,7 +148,7 @@ def worker_ps_fn(cluster, task):
             slim.losses.softmax_cross_entropy(logits, labels, scope='loss')
             total_loss = slim.losses.get_total_loss()
             # Summarize loss
-            tf.scalar_summary('losses/Total loss', total_loss)
+            tf.summary.scalar('losses/Total loss', total_loss)
 
             # Optimizer and training op
             optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, epsilon=1e-4)
@@ -161,11 +161,11 @@ def worker_ps_fn(cluster, task):
             # Batch accuracy
             train_predictions = tf.one_hot(tf.argmax(predictions, 1), 2, dtype=tf.int32)
             train_accuracy = slim.metrics.accuracy(train_predictions, labels, 100.0)
-            tf.scalar_summary('batch_stats/accuracy', train_accuracy)
+            tf.summary.scalar('batch_stats/accuracy', train_accuracy)
 
             # Batch mixture: true labels / total labels
             mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)[1]), FLAGS.batch_size)
-            tf.scalar_summary('batch_stats/labels ratio', mix)
+            tf.summary.scalar('batch_stats/labels ratio', mix)
 
         # Run the training
         final_loss = slim.learning.train(train_op,
@@ -198,11 +198,13 @@ def main(_):
     cluster_data = env.get('cluster', None)
     cluster = tf.train.ClusterSpec(cluster_data) if cluster_data else None
     
-    if FLAGS.job_name == "ps":
-        parameter_server_fn(cluster, task)
-   
-    elif FLAGS.job_name == "worker":
+    # Start Job/task
+    if not cluster or not task or task.type == 'master' or task.type == 'worker':
         worker_ps_fn(cluster, task)
+    elif task.type == 'ps':
+        parameter_server_fn(cluster, task)
+    else:
+        raise ValueError('invalid task_type %s' % (task.type,))     
             
             
 if __name__ == '__main__':

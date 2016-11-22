@@ -151,7 +151,7 @@ def eegnet_v1(inputs,
                 
                 with tf.variable_scope('logits'):
                     batch_num_points = hidden.get_shape().as_list()[2]
-                    hidden = slim.avg_pool2d(hidden, [1, batch_num_points*2//400], [1, batch_num_points//400])
+                    hidden = slim.avg_pool2d(hidden, [1, batch_num_points*2//2400], [1, batch_num_points//2400])
                     
                     # 1 x 2400 x 32
                     hidden = slim.conv2d(hidden, 16, 1, scope='1x1compress')
