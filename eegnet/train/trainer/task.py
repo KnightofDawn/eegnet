@@ -43,14 +43,14 @@ FLAGS = tf.app.flags.FLAGS
 
 def get_init_fn():
     if FLAGS.checkpoint_dir is None:
-        tf.logging.info('Skipping checkpoint load')
+        tf.logging.info('Skipping checkpoint load.')
         return None
     
     checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
     
     if checkpoint_path is None:
         tf.logging.info('No checkpoint found in %s' % FLAGS.checkpoint_dir)
-        return None
+        raise ValueError('You must supply a valid checkpoint directory with --checkpoint_dir or use None.')
     
     tf.logging.info('Loading model from %s' % checkpoint_path)
     
