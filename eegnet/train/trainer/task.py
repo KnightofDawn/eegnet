@@ -13,38 +13,30 @@ from read_preproc_dataset import read_dataset
 # Directories
 ##
 
-tf.app.flags.DEFINE_string('dataset_dir', '/content/dataset/train_gbucket/*.tfr', 
+tf.app.flags.DEFINE_string('dataset_dir', '/content/dataset/train/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
 tf.app.flags.DEFINE_string('checkpoint_dir', None,
     'Where checkpoints are loaded from.')
 
-tf.app.flags.DEFINE_string('log_dir', '/content/logs/gcloud_test/',
+tf.app.flags.DEFINE_string('log_dir', '/content/logs',
     'Where checkpoints and event logs are written to.')
-
-##
-# TFReaders configuration
-##
-
-tf.app.flags.DEFINE_integer('file_num_splits', 5,
-                            'Splits to perform on each TFReader file.')
-
-tf.app.flags.DEFINE_integer('batch_size', 3,
-                            'Number of splits/files in each batch to the network.')
-
-##
-# Network configuration
-##
-
-tf.app.flags.DEFINE_boolean('is_training', True,
-                            'Determines shuffling, dropout and batch norm behaviour and dropout removal.')
 
 ##
 # Train configuration
 ##
 
+tf.app.flags.DEFINE_boolean('is_training', True,
+                            'Determines shuffling, dropout/batch_norm behaviour and drop-out removal.')
+
+tf.app.flags.DEFINE_integer('num_splits', 1,
+                            'Splits to perform on each TFRecord file.')
+
+tf.app.flags.DEFINE_integer('batch_size', 1,
+                            'Training batch size.')
+
 tf.app.flags.DEFINE_integer('num_iters', 5000,
-                            'Determines shuffling, dropout and batch norm behaviour and dropout removal.')
+                            'Number of training iterations.')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -133,8 +125,8 @@ def worker_ps_fn(cluster, task):
     with tf.Graph().as_default():
         with tf.device(device_fn):
             # Input pipeline
-            data, labels = read_dataset(tf.gfile.Glob(FLAGS.dataset_dir), 
-                                        num_splits=FLAGS.file_num_splits,
+            data, labels = read_dataset(tf.gfile.Glob(FLAGS.dataset_dir),
+                                        num_splits=FLAGS.num_splits,
                                         batch_size=FLAGS.batch_size,
                                         is_training=FLAGS.is_training)
             shape = data.get_shape().as_list()
@@ -148,10 +140,10 @@ def worker_ps_fn(cluster, task):
             slim.losses.softmax_cross_entropy(logits, labels, scope='loss')
             total_loss = slim.losses.get_total_loss()
             # Summarize loss
-            tf.summary.scalar('losses/Total loss', total_loss)
+            tf.summary.scalar('losses/total_loss', total_loss)
 
             # Optimizer and training op
-            optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, epsilon=1e-4)
+            optimizer = tf.train.AdamOptimizer(learning_rate=1e-3, epsilon=1e-2)
             train_op = slim.learning.create_train_op(total_loss, optimizer)
 
             # Add histograms for trainable variables.
@@ -165,7 +157,7 @@ def worker_ps_fn(cluster, task):
 
             # Batch mixture: true labels / total labels
             mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)[1]), FLAGS.batch_size)
-            tf.summary.scalar('batch_stats/labels ratio', mix)
+            tf.summary.scalar('batch_stats/labels_ratio', mix)
 
         # Run the training
         final_loss = slim.learning.train(train_op,
@@ -175,8 +167,8 @@ def worker_ps_fn(cluster, task):
                                          number_of_steps=FLAGS.num_iters,
                                          init_fn=get_init_fn(),
                                          session_config=config,
-                                         log_every_n_steps=10,
-                                         save_summaries_secs=5,
+                                         log_every_n_steps=5,
+                                         save_summaries_secs=15,
                                          save_interval_secs=15*60)
 
 

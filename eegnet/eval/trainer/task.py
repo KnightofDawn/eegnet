@@ -10,23 +10,23 @@ from read_preproc_dataset import read_dataset
 # Directories
 #
 
-tf.app.flags.DEFINE_string('dataset_dir', '/content/dataset/train_gbucket/*.tfr', 
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/eval/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
-tf.app.flags.DEFINE_string('checkpoint_dir', '/content/logs/gcloud_test/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/shared/logs/gcloud_distributed_pool2400_split5_batch3/',
     'Where checkpoints and event logs are written to.')
 
-tf.app.flags.DEFINE_string('log_dir', '/content/logs/eval_test/',
+tf.app.flags.DEFINE_string('log_dir', '/shared/logs/eval_test/',
     'Where checkpoints and event logs are written to.')
 
 ##
 # TFReaders configuration
 ##
 
-tf.app.flags.DEFINE_integer('file_num_splits', 50,
+tf.app.flags.DEFINE_integer('file_num_splits', 5,
                             'Splits to perform on each TFReader file.')
 
-tf.app.flags.DEFINE_integer('batch_size', 64,
+tf.app.flags.DEFINE_integer('batch_size', 6,
                             'Number of splits/files in each batch to the network.')
 
 ##
