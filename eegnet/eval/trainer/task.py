@@ -79,17 +79,15 @@ def main(_):
 
         # Define the metrics:
         names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-                'Stream Accuracy': slim.metrics.streaming_accuracy(predictions_onehot, labels),
-                'Stream Recall': slim.metrics.streaming_recall(predictions_onehot, labels),
-                'Stream Loss': slim.metrics.streaming_mean(slim.losses.get_total_loss()),
+                'stream_accuracy': slim.metrics.streaming_accuracy(predictions_onehot, labels),
+                'stream_recall': slim.metrics.streaming_recall(predictions_onehot, labels),
+                'stream_loss': slim.metrics.streaming_mean(slim.losses.get_total_loss()),
             })
         
         # Print the summaries to screen.
         for name, value in names_to_values.iteritems():
             summary_name = 'eval/%s' % name
-            op = tf.scalar_summary(summary_name, value, collections=[])
-            op = tf.Print(op, [value], summary_name)
-            tf.add_to_collection(tf.GraphKeys.SUMMARIES, op)
+            tf.summary.scalar(summary_name, value)
         
         # This ensures that we make a single pass over all of the data.
         num_batches = len(filenames)*FLAGS.num_splits//float(FLAGS.batch_size)
