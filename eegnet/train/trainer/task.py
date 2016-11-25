@@ -148,7 +148,7 @@ def worker_ps_fn(cluster, task):
 
             # Add histograms for trainable variables.
             for var in slim.get_model_variables():
-                tf.histogram_summary(var.op.name, var)
+                tf.summary.histogram(var.op.name, var)
 
             # Batch accuracy
             train_predictions = tf.one_hot(tf.argmax(predictions, 1), 2, dtype=tf.int32)
