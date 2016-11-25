@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:0.11.0rc1
+FROM tensorflow/tensorflow:0.12.0-rc0
 
 MAINTAINER Nuno Silva <nuno.mgomes.silva@gmail.com>
 
