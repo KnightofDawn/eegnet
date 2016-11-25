@@ -49,20 +49,13 @@ def get_init_fn():
     checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
     
     if checkpoint_path is None:
-        tf.logging.info('No checkpoint found in %s' % FLAGS.checkpoint_dir)
-        raise ValueError('You must supply a valid checkpoint directory with --checkpoint_dir or use None.')
+        raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' % FLAGS.checkpoint_dir)
     
     tf.logging.info('Loading model from %s' % checkpoint_path)
     
-    variables_to_restore = slim.get_model_variables()
-    
-    ## Create dictionary between old names and new ones
-    #name_in_checkpoint = lambda var: var.op.name.replace("eegnet_v1", "eegnet_network")    
-    #variables_to_restore = {name_in_checkpoint(var):var for var in variables_to_restore}
-    
     return slim.assign_from_checkpoint_fn(
-        checkpoint_path, 
-        variables_to_restore, 
+        model_path=checkpoint_path, 
+        var_list=slim.get_model_variables(), 
         ignore_missing_vars=True)
 
 
