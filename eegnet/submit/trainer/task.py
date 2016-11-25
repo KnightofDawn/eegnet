@@ -36,7 +36,6 @@ FLAGS = tf.app.flags.FLAGS
 
 
 def get_init_fn():
-    return None
     """Loads the NN"""
     if FLAGS.checkpoint_dir is None:
         raise ValueError('None supplied. Supply a valid checkpoint directory with --checkpoint_dir')
@@ -112,7 +111,7 @@ def main(_):
             supervi.start_queue_runners(sess)
 
             grades = list()
-            for i in range(int(3)):
+            for i in range(int(num_batches)):
                 tf.logging.info('Executing eval_op %d/%d', i + 1, num_batches)
                 grades.append(sess.run([fnames, predictions]))
                 # print(grades)
