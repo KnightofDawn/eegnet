@@ -1,13 +1,16 @@
+"""
+Preprocessing of the dataset
+"""
+
 from __future__ import print_function
 import tensorflow as tf
-slim = tf.contrib.slim
-
+import tf.contrib.slim as slim
 
 def read_dataset(filenames,
                  num_splits=1,
-                 batch_size=1,                 
+                 batch_size=1,
                  is_training=True):
-    
+    """Reads the entire dataset"""
     tf.logging.info("Reading #%d files." % len(filenames))
 
     ## TFRecords description for Dataset reader
@@ -17,34 +20,33 @@ def read_dataset(filenames,
         'filename': tf.FixedLenFeature([], tf.string),
     }
     items_to_handlers = {
-        'data': slim.tfexample_decoder.Tensor('data'), 
-        'label': slim.tfexample_decoder.Tensor('label'), 
-        'filename': slim.tfexample_decoder.Tensor('filename'), 
-    }    
+        'data': slim.tfexample_decoder.Tensor('data'),
+        'label': slim.tfexample_decoder.Tensor('label'),
+        'filename': slim.tfexample_decoder.Tensor('filename'),
+    }
     decoder = slim.tfexample_decoder.TFExampleDecoder(
         keys_to_features, items_to_handlers)
 
     items_to_descriptions = {
         'data': '240000x16 channels sample points of iEEG.',
-        'label': 'Label 0 indicates interictal and 1 preictal.', 
+        'label': 'Label 0 indicates interictal and 1 preictal.',
         'filename': 'File name containing the data',
     }
 
     ## TFRecords files reading
-    dataset = slim.dataset.Dataset(
-        data_sources=filenames, 
-        reader=tf.TFRecordReader, 
-        decoder=decoder, 
-        num_samples=1, 
-        items_to_descriptions=items_to_descriptions)
+    dataset = slim.dataset.Dataset(data_sources=filenames,
+                                   reader=tf.TFRecordReader,
+                                   decoder=decoder,
+                                   num_samples=1,
+                                   items_to_descriptions=items_to_descriptions)
 
-    data_provider = slim.dataset_data_provider.DatasetDataProvider(dataset, 
-                                                                   shuffle=is_training, 
-                                                                   num_epochs=None, 
-                                                                   common_queue_capacity=10*batch_size, 
+    data_provider = slim.dataset_data_provider.DatasetDataProvider(dataset,
+                                                                   shuffle=is_training,
+                                                                   num_epochs=None,
+                                                                   common_queue_capacity=10*batch_size,
                                                                    common_queue_min=5*batch_size)
     data, label = data_provider.get(['data', 'label'])
-    
+
     ## Preprocess
     # Reshape data to original format: [width, channels]
     data = tf.reshape(data, shape=[240000, 16])
@@ -58,8 +60,8 @@ def read_dataset(filenames,
     idx_clean = tf.reshape(tf.where(tf.greater(var, 0.5)), shape=[-1])
 
     # Remove dropout segments based on training flag
-    data = slim.utils.smart_cond(is_training, 
-                                 lambda: tf.gather(data, idx_clean), 
+    data = slim.utils.smart_cond(is_training,
+                                 lambda: tf.gather(data, idx_clean),
                                  lambda: data)
 
     # Normalize: mean=0 and sigma=0.5
@@ -73,23 +75,23 @@ def read_dataset(filenames,
 
     # Create label array of segments
     num_segments = tf.shape(data)[0]
-    label = tf.one_hot(label, 2, dtype=tf.int32)        
+    label = tf.one_hot(label, 2, dtype=tf.int32)
     label = tf.reshape(tf.tile(label, [num_segments]), shape=[num_segments, 2])
 
     ## Batch 4D tensor: [batch, height, width, channels]
-    shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label], 
-                                                      batch_size=batch_size, 
-                                                      capacity=5*num_splits*batch_size, 
-                                                      min_after_dequeue=3*num_splits*batch_size, 
-                                                      num_threads=1, 
+    shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label],
+                                                      batch_size=batch_size,
+                                                      capacity=5*num_splits*batch_size,
+                                                      min_after_dequeue=3*num_splits*batch_size,
+                                                      num_threads=1,
                                                       enqueue_many=True)
-    
-    batch_fn = lambda: tf.train.batch([data, label], 
-                                      batch_size=batch_size, 
-                                      capacity=5*num_splits*batch_size, 
-                                      num_threads=1, 
+
+    batch_fn = lambda: tf.train.batch([data, label],
+                                      batch_size=batch_size,
+                                      capacity=5*num_splits*batch_size,
+                                      num_threads=1,
                                       enqueue_many=True)
 
     data, label = slim.utils.smart_cond(is_training, shuffle_batch_fn, batch_fn)
-    
+
     return data, label
