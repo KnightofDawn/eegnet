@@ -4,7 +4,7 @@ Preprocessing of the dataset
 
 from __future__ import print_function
 import tensorflow as tf
-import tf.contrib.slim as slim
+slim = tf.contrib.slim
 
 def read_dataset(filenames,
                  num_splits=1,
