@@ -2,7 +2,7 @@
 
 # Quit early if any command fails.
 set -ex
-
+USER=cl3ntist
 JOB_NAME=eegnet_distributed_${USER}_$(date +%Y%m%d_%H%M%S)
 PROJECT_ID=`gcloud config list project --format "value(core.project)"`
 TRAIN_BUCKET=gs://${PROJECT_ID}-ml

@@ -1,6 +1,0 @@
-model_checkpoint_path: "/content/logs/gcloud_test/model.ckpt-5000"
-all_model_checkpoint_paths: "/content/logs/gcloud_test/model.ckpt-4036"
-all_model_checkpoint_paths: "/content/logs/gcloud_test/model.ckpt-4236"
-all_model_checkpoint_paths: "/content/logs/gcloud_test/model.ckpt-4458"
-all_model_checkpoint_paths: "/content/logs/gcloud_test/model.ckpt-4762"
-all_model_checkpoint_paths: "/content/logs/gcloud_test/model.ckpt-5000"

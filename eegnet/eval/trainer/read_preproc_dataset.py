@@ -3,52 +3,14 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-def preprocess_dataset(data, 
-                       label,
-                       num_splits,
-                       is_training):
-    
-    # Split data into smaller segments (speeds up trainning)
-    data = tf.reshape(data, shape=[240000, 16])
-    data = tf.pack(tf.split(0, num_splits, data), axis=0)
-    
-    # Detect dropout segments (flow controlled by flag)
-    _, var = tf.nn.moments(data, axes=[1, 2])
-    # 'indexes > sigma threshold: tf.where' returns a 2D Tensor. reshape it to 1D.
-    idx_clean = tf.reshape(tf.where(tf.greater(var, 0.5)), shape=[-1])
-    
-    # Remove dropout segments
-    rem_dropouts_fn = lambda: tf.gather(data, idx_clean)
-    id_fn = lambda: data
-    # decide removal based on flag
-    data = slim.utils.smart_cond(is_training, rem_dropouts_fn, id_fn)
-    
-    # Create label array of segments
-    label = tf.one_hot(label, 2, dtype=tf.int32)
-    num_segments = tf.shape(data)[0]
-    label = tf.reshape(tf.tile(label, [num_segments]), shape=[num_segments, 2])
-    
-    # Normalize mean=0 and sigma=0.5
-    data_mean = tf.expand_dims(tf.reduce_mean(data, reduction_indices=[1]), dim=1)
-    data = tf.sub(data, data_mean)
-    data_max = tf.expand_dims(tf.reduce_max(tf.abs(data), reduction_indices=[1]), dim=1)
-    data = tf.div(data, tf.mul(2.0, data_max))
-    
-    # 4D tensor with height = 1: [batch, height, width, channels]
-    data = tf.expand_dims(data, dim=1)
-    
-    return data, label
-    
-
 def read_dataset(filenames,
-                 num_splits=10,
-                 batch_size=16,                 
+                 num_splits=1,
+                 batch_size=1,                 
                  is_training=True):
     
     tf.logging.info("Reading #%d files." % len(filenames))
 
-    reader = tf.TFRecordReader
-
+    ## TFRecords description for Dataset reader
     keys_to_features = {
         'data': tf.FixedLenFeature([240000*16], tf.float32),
         'label': tf.FixedLenFeature([], tf.int64),
@@ -68,9 +30,10 @@ def read_dataset(filenames,
         'filename': 'File name containing the data',
     }
 
+    ## TFRecords files reading
     dataset = slim.dataset.Dataset(
         data_sources=filenames, 
-        reader=reader, 
+        reader=tf.TFRecordReader, 
         decoder=decoder, 
         num_samples=1, 
         items_to_descriptions=items_to_descriptions)
@@ -78,21 +41,45 @@ def read_dataset(filenames,
     data_provider = slim.dataset_data_provider.DatasetDataProvider(dataset, 
                                                                    shuffle=is_training, 
                                                                    num_epochs=None, 
-                                                                   common_queue_capacity=40, 
-                                                                   common_queue_min=20)
-
+                                                                   common_queue_capacity=10*batch_size, 
+                                                                   common_queue_min=5*batch_size)
     data, label = data_provider.get(['data', 'label'])
-
+    
     ## Preprocess
-    data, label = preprocess_dataset(data, 
-                                     label,
-                                     num_splits, 
-                                     is_training)
+    # Reshape data to original format: [width, channels]
+    data = tf.reshape(data, shape=[240000, 16])
 
-    ## Batch it up.
+    # Split data, if split = 1 only expands dim: [num_splits, width, channels]
+    data = tf.pack(tf.split(0, num_splits, data), axis=0)
+
+    # Detect dropout segments: indexes > sigma threshold
+    _, var = tf.nn.moments(data, axes=[1, 2])
+    # tf.where returns a 2D Tensor. reshape it to 1D
+    idx_clean = tf.reshape(tf.where(tf.greater(var, 0.5)), shape=[-1])
+
+    # Remove dropout segments based on training flag
+    data = slim.utils.smart_cond(is_training, 
+                                 lambda: tf.gather(data, idx_clean), 
+                                 lambda: data)
+
+    # Normalize: mean=0 and sigma=0.5
+    data_mean = tf.expand_dims(tf.reduce_mean(data, reduction_indices=[1]), dim=1)
+    data = tf.sub(data, data_mean)
+    data_max = tf.expand_dims(tf.reduce_max(tf.abs(data), reduction_indices=[1]), dim=1)
+    data = tf.div(data, tf.mul(2.0, data_max))
+
+    # 4D tensor with height = 1: [batch, height, width, channels]
+    data = tf.expand_dims(data, dim=1)
+
+    # Create label array of segments
+    num_segments = tf.shape(data)[0]
+    label = tf.one_hot(label, 2, dtype=tf.int32)        
+    label = tf.reshape(tf.tile(label, [num_segments]), shape=[num_segments, 2])
+
+    ## Batch 4D tensor: [batch, height, width, channels]
     shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label], 
                                                       batch_size=batch_size, 
-                                                      capacity=4*num_splits*batch_size, 
+                                                      capacity=5*num_splits*batch_size, 
                                                       min_after_dequeue=3*num_splits*batch_size, 
                                                       num_threads=1, 
                                                       enqueue_many=True)
@@ -102,7 +89,7 @@ def read_dataset(filenames,
                                       capacity=5*num_splits*batch_size, 
                                       num_threads=1, 
                                       enqueue_many=True)
-    
+
     data, label = slim.utils.smart_cond(is_training, shuffle_batch_fn, batch_fn)
     
     return data, label
