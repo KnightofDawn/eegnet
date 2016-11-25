@@ -3,14 +3,10 @@
 # Quit early if any command fails.
 set -ex
 
-gcloud beta ml local train \
-  --package-path=trainer \
-  --module-name=trainer.task \
-  -- \
-  --dataset_dir="/content/dataset/eval/*.tfr" \
-  --checkpoint_dir="/content/logs/eval_test" \
-  --log_dir="/content/logs/eval_run" \
+python trainer/task.py \
+  --dataset_dir="/shared/dataset/eval/*.tfr" \
+  --checkpoint_dir="/shared/checkpoints/gcloud_2nd_pool2400_split1_batch3" \
+  --log_dir="/shared/logs" \
   --batch_size=1 \
-  --num_splits=1 \
-  --num_iters=20
+  --num_splits=1
   

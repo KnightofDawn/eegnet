@@ -10,13 +10,13 @@ from read_preproc_dataset import read_dataset
 # Directories
 ##
 
-tf.app.flags.DEFINE_string('dataset_dir', '/content/dataset/train/*.tfr', 
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/eval/*.tfr', 
     'Where dataset TFReaders files are loaded from.')
 
-tf.app.flags.DEFINE_string('checkpoint_dir', '/content/logs/gcloud_distributed_pool2400_split5_batch3',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/shared/checkpoints',
     'Where checkpoints are loaded from.')
 
-tf.app.flags.DEFINE_string('log_dir', '/content/logs',
+tf.app.flags.DEFINE_string('log_dir', '/shared/logs',
     'Where checkpoints and event logs are written to.')
 
 ##
@@ -31,9 +31,6 @@ tf.app.flags.DEFINE_integer('num_splits', 1,
 
 tf.app.flags.DEFINE_integer('batch_size', 1,
                             'Training batch size.')
-
-tf.app.flags.DEFINE_integer('num_iters', 20,
-                            'Number of training iterations.')
 
 FLAGS = tf.app.flags.FLAGS
 
