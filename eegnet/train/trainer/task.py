@@ -6,7 +6,7 @@ import json
 import os
 
 
-from eegnet_v1 import eegnet_v1 as network
+from eegnet_v2 import eegnet_v2 as network
 from read_preproc_dataset import read_dataset
 
 ##
