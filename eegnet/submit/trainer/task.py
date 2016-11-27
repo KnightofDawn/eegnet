@@ -63,8 +63,7 @@ def save_submit(grades_list):
     filep.write("File,Class\n") #save header
 
     for key in grades_list:
-        filep.write("%s,%s\n"%(key[0][0].replace('tfr','mat'), key[1][0][0]))
-
+        filep.write("%s,%s\n"%(key[0][0].replace('tfr', 'mat'), key[1][0][0]))
 
     filep.close()
 
@@ -83,12 +82,11 @@ def main(_):
         shape = data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
 
+
         # Create model
         _, predictions = network(data, is_training=FLAGS.is_training)
         predictions = tf.slice(predictions, [0, 1], [-1, 1]) #slicing for filename and P(1)
 
-
-        # predictions = predictions[1] #slicing the predictions to contain only prob of 1s
 
         tf.logging.info('Network model created.')
 
@@ -114,7 +112,7 @@ def main(_):
             for i in range(int(num_batches)):
                 tf.logging.info('Executing eval_op %d/%d', i + 1, num_batches)
                 grades.append(sess.run([fnames, predictions]))
-                # print(grades)
+                tf.logging.info("%s=%f"%(grades[i][0][0], grades[i][1][0][0]))
 
             save_submit(grades)
 
