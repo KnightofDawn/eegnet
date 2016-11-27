@@ -5,8 +5,8 @@ The main runtime file
 from __future__ import print_function
 import tensorflow as tf
 slim = tf.contrib.slim
-from trainer.eegnet_v1 import eegnet_v1 as network
-from trainer.read_preproc_dataset import read_dataset
+from eegnet_v1 import eegnet_v1 as network
+from read_preproc_dataset import read_dataset
 
 ##
 # Directories
@@ -74,13 +74,13 @@ def main(_):
         # Loss
         slim.losses.softmax_cross_entropy(logits, labels, scope='loss')
 
-        # Accuracy
-        predictions_onehot = tf.one_hot(tf.argmax(predictions, 1), 2, dtype=tf.int32)
+        # Sliced predictions and labels for AUC calculation: get last column only
+        predictions = tf.slice(predictions, [0, 1], [-1, 1])
+        labels = tf.slice(labels, [0, 1], [-1, 1])
 
         # Define the metrics:
         names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-            'stream_accuracy': slim.metrics.streaming_accuracy(predictions_onehot, labels),
-            'stream_recall': slim.metrics.streaming_recall(predictions_onehot, labels),
+            'stream_auc': slim.metrics.streaming_auc(predictions, labels),
             'stream_loss': slim.metrics.streaming_mean(slim.losses.get_total_loss()),
             })
 
