@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install scikit-learn pyreadline
 
 # Manage container shared folders
-RUN rm -rf /shared/*
-WORKDIR /shared
-VOLUME [/shared]
+RUN rm -rf /content/*
+WORKDIR /content
+VOLUME [/content]
 CMD ["/run_jupyter.sh"]

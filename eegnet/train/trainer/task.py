@@ -144,13 +144,14 @@ def worker_ps_fn(cluster, task):
                 tf.summary.histogram(var.op.name, var)
 
             # Batch accuracy
-            train_predictions = tf.one_hot(tf.argmax(predictions, 1), 2, dtype=tf.int32)
-            train_accuracy = slim.metrics.accuracy(train_predictions, labels, 100.0)
-            tf.summary.scalar('batch_stats/accuracy', train_accuracy)
+            # Sliced predictions and labels for AUC calculation: get last column only
+            predictions = tf.slice(predictions, [0, 1], [-1, 1])
+            labels = tf.slice(labels, [0, 1], [-1, 1])
+            tf.summary.scalar('batch_stats/stream_auc', slim.metrics.streaming_auc(predictions, labels)[0])
 
             # Batch mixture: true labels / total labels
-            mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)[1]), FLAGS.batch_size)
-            tf.summary.scalar('batch_stats/labels_ratio', mix)
+            mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)), FLAGS.batch_size)
+            tf.summary.scalar('batch_stats/stream_labels_ratio', slim.metrics.streaming_mean(mix)[0])
 
         # Run the training
         final_loss = slim.learning.train(train_op,

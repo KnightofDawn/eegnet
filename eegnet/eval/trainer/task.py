@@ -5,19 +5,20 @@ The main runtime file
 from __future__ import print_function
 import tensorflow as tf
 slim = tf.contrib.slim
-from eegnet_v1 import eegnet_v1 as network
+
+from eegnet_v2 import eegnet_v2 as network
 from read_preproc_dataset import read_dataset
 
 ##
 # Directories
 ##
-tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/eval/*.tfr',
+tf.app.flags.DEFINE_string('dataset_dir', '/content/dataset/eval/*.tfr',
                            'Where dataset TFReaders files are loaded from.')
 
-tf.app.flags.DEFINE_string('checkpoint_dir', '/shared/checkpoints',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/content/checkpoints',
                            'Where checkpoints are loaded from.')
 
-tf.app.flags.DEFINE_string('log_dir', '/shared/logs',
+tf.app.flags.DEFINE_string('log_dir', '/content/logs',
                            'Where checkpoints and event logs are written to.')
 
 ##
