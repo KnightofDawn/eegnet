@@ -1,12 +1,10 @@
 """
 The main runtime file
 """
-
 from __future__ import print_function
 import tensorflow as tf
-slim = tf.contrib.slim
-from eegnet_v1 import eegnet_v1 as network
-from read_preproc_dataset import read_dataset
+from eegnet.eegnet_v1 import eegnet_v1 as network
+from eegnet.read_preproc_dataset import read_dataset
 
 ##
 # Directories
@@ -37,6 +35,7 @@ FLAGS = tf.app.flags.FLAGS
 
 def get_init_fn():
     """Loads the NN"""
+    slim = tf.contrib.slim
     if FLAGS.checkpoint_dir is None:
         raise ValueError('None supplied. Supply a valid checkpoint directory with --checkpoint_dir')
 
@@ -71,6 +70,8 @@ def save_submit(grades_list):
 
 def main(_):
     """Generates the TF graphs and loads the NN"""
+    slim = tf.contrib.slim
+
     tf.logging.set_verbosity(tf.logging.INFO)
     with tf.Graph().as_default() as graph:
         # Input pipeline

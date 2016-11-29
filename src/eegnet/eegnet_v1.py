@@ -4,11 +4,11 @@ The NN basic methods
 
 from __future__ import print_function
 import tensorflow as tf
-slim = tf.contrib.slim
 
 
 def dilated_block(hidden, rate, scope):
     """Base Wavenet NN Architecture"""
+    slim = tf.contrib.slim
     with tf.variable_scope(scope):
         # Residual
         layer_input = hidden
@@ -36,6 +36,7 @@ def eegnet_v1(inputs,
               is_training=True,
               scope='eegnet_v1'):
     """The Total NN"""
+    slim = tf.contrib.slim
     with tf.variable_scope(scope, 'eegnet_v1', reuse=reuse):
         with slim.arg_scope([slim.batch_norm, slim.dropout],
                             is_training=is_training):
@@ -70,8 +71,11 @@ def eegnet_v1(inputs,
                     # 1 x 800 x 8
                     hidden = slim.conv2d(hidden, 2, [1, 7], stride=5, scope='1x3reduce2')
                     # 1 x 160 x 2
+
                     hidden = slim.flatten(hidden)
+
                     hidden = slim.dropout(hidden, 0.8)
+
                     logits = slim.fully_connected(hidden, 2, normalizer_fn=None,
                                                   activation_fn=None, scope='logits')
                     predictions = tf.nn.softmax(logits)

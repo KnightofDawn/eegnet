@@ -5,8 +5,6 @@ MAINTAINER Nuno Silva <nuno.mgomes.silva@gmail.com>
 # Update and install basic tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	wget \
-	git-core \
-	cmake \
 	&& \ 
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
