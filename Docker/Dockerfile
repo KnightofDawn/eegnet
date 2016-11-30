@@ -2,6 +2,9 @@ FROM tensorflow/tensorflow:0.12.0-rc0
 
 MAINTAINER Nuno Silva <nuno.mgomes.silva@gmail.com>
 
+# Path configuration
+ENV PATH $PATH:/tools/google-cloud-sdk/bin
+
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	wget \
@@ -27,11 +30,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     google-api-python-client && \
     
 # Setup Google Cloud SDK
-    wget -nv https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip && \
     mkdir -p /tools && \
-    unzip -qq google-cloud-sdk.zip -d tools && \
+    wget -nv https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip && \    
+    unzip -qq google-cloud-sdk.zip -d /tools && \
     rm google-cloud-sdk.zip && \
-    tools/google-cloud-sdk/install.sh && \
+    /tools/google-cloud-sdk/install.sh --usage-reporting=false \
+        --path-update=false --bash-completion=false \
+        --disable-installation-options && \
+    /tools/google-cloud-sdk/bin/gcloud -q components update \
+        gcloud core bq gsutil compute preview alpha beta && \
+    touch /tools/google-cloud-sdk/lib/third_party/google.py && \
     
 # Clean up
     apt-get autoremove -y && \
@@ -56,7 +64,6 @@ RUN pip install --upgrade --force-reinstall \
     unzip cloudml-samples.zip && \
     mv cloudml-samples-master/ samples/
     
-
 # Manage container shared folders
 RUN rm -rf /content/*
 WORKDIR /content
