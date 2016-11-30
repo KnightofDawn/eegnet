@@ -4,11 +4,36 @@ The NN basic methods
 
 from __future__ import print_function
 import tensorflow as tf
+slim = tf.contrib.slim
+
+
+FLAGS = tf.app.flags.FLAGS
+
+
+def get_init_fn(continue_oncheck=False):
+    """Loads the NN"""
+    if FLAGS.checkpoint_dir is None:
+        if continue_oncheck:
+            return None
+        else:
+            raise ValueError('No checkpoint provided, using --checkpoint_dir')
+
+    checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
+
+    if checkpoint_path is None:
+        raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' %
+                         FLAGS.checkpoint_dir)
+
+    tf.logging.info('Loading model from %s', checkpoint_path)
+
+    return slim.assign_from_checkpoint_fn(model_path=checkpoint_path,
+                                          var_list=slim.get_model_variables(),
+                                          ignore_missing_vars=True)
+
 
 
 def dilated_block(hidden, rate, scope):
     """Base Wavenet NN Architecture"""
-    slim = tf.contrib.slim
     with tf.variable_scope(scope):
         # Residual
         layer_input = hidden
@@ -36,7 +61,6 @@ def eegnet_v1(inputs,
               is_training=True,
               scope='eegnet_v1'):
     """The Total NN"""
-    slim = tf.contrib.slim
     with tf.variable_scope(scope, 'eegnet_v1', reuse=reuse):
         with slim.arg_scope([slim.batch_norm, slim.dropout],
                             is_training=is_training):

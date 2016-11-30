@@ -5,6 +5,7 @@ The main runtime file
 from __future__ import print_function
 import tensorflow as tf
 from eegnet.eegnet_v1 import eegnet_v1 as network
+from eegnet.eegnet_v1 import get_init_fn
 from eegnet.read_preproc_dataset_eval import read_dataset
 slim = tf.contrib.slim
 
@@ -34,25 +35,6 @@ tf.app.flags.DEFINE_integer('batch_size', 1,
                             'Training batch size.')
 
 FLAGS = tf.app.flags.FLAGS
-
-
-def get_init_fn():
-    """Loads the NN"""
-    if FLAGS.checkpoint_dir is None:
-        raise ValueError('None supplied. Supply a valid checkpoint directory with --checkpoint_dir')
-
-    checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
-
-    if checkpoint_path is None:
-        raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' %
-                         FLAGS.checkpoint_dir)
-
-    tf.logging.info('Loading model from %s' % checkpoint_path)
-
-    return slim.assign_from_checkpoint_fn(
-        model_path=checkpoint_path,
-        var_list=slim.get_model_variables(),
-        ignore_missing_vars=True)
 
 
 

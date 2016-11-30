@@ -5,6 +5,7 @@ The main runtime file
 from __future__ import print_function
 import tensorflow as tf
 from eegnet.eegnet_v1 import eegnet_v1 as network
+from eegnet.eegnet_v1 import get_init_fn
 from eegnet.read_preproc_dataset import read_dataset
 slim = tf.contrib.slim
 
@@ -36,25 +37,6 @@ tf.app.flags.DEFINE_integer('batch_size', 1,
 FLAGS = tf.app.flags.FLAGS
 
 
-def get_init_fn():
-    """Loads the NN"""
-    if FLAGS.checkpoint_dir is None:
-        raise ValueError('None supplied. Supply a valid checkpoint directory with --checkpoint_dir')
-
-    checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
-
-    if checkpoint_path is None:
-        raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' %
-                         FLAGS.checkpoint_dir)
-
-    tf.logging.info('Loading model from %s' % checkpoint_path)
-
-    return slim.assign_from_checkpoint_fn(
-        model_path=checkpoint_path,
-        var_list=slim.get_model_variables(),
-        ignore_missing_vars=True)
-
-
 def main(_):
     """Generates the TF graphs and loads the NN"""
     tf.logging.set_verbosity(tf.logging.INFO)
@@ -65,8 +47,9 @@ def main(_):
                                     num_splits=FLAGS.num_splits,
                                     batch_size=FLAGS.batch_size,
                                     is_training=FLAGS.is_training)
+
         shape = data.get_shape().as_list()
-        tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
+        tf.logging.info('Batch size/num_points: %d/%d', shape[0], shape[2])
 
         # Create model
         logits, predictions = network(data, is_training=FLAGS.is_training)
@@ -106,7 +89,8 @@ def main(_):
 
         with supervi.managed_session(master='', start_standard_services=False) as sess:
             tf.logging.info('Starting evaluation.')
-            # Start queues for TFRecords reading supervi.start_queue_runners(sess)
+            # Start queues for TFRecords reading
+            supervi.start_queue_runners(sess)
 
             for i in range(int(num_batches)):
                 tf.logging.info('Executing eval_op %d/%d', i + 1, num_batches)
@@ -114,7 +98,7 @@ def main(_):
 
                 output = dict(zip(names_to_values.keys(), metric_values))
                 for name in output:
-                    tf.logging.info('%s: %f' % (name, output[name]))
+                    tf.logging.info('%s: %f', name, output[name])
 
 
 if __name__ == '__main__':
