@@ -67,5 +67,5 @@ RUN pip install --upgrade --force-reinstall \
 # Manage container shared folders
 RUN rm -rf /content/*
 WORKDIR /content
-VOLUME [/content]
+VOLUME ["/content"]
 CMD ["/run_jupyter.sh"]
