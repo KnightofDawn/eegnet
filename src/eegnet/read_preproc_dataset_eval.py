@@ -6,10 +6,10 @@ from __future__ import print_function
 import tensorflow as tf
 slim = tf.contrib.slim
 
-
 def read_dataset(filenames,
                  num_splits=1,
-                 batch_size=1):
+                 batch_size=1,
+                 is_training=True):
     """Reads the entire dataset"""
     tf.logging.info("Reading #%d files." % len(filenames))
 
@@ -41,7 +41,7 @@ def read_dataset(filenames,
                                    items_to_descriptions=items_to_descriptions)
 
     data_provider = slim.dataset_data_provider.DatasetDataProvider(dataset,
-                                                                   shuffle=False,
+                                                                   shuffle=is_training,
                                                                    num_epochs=None,
                                                                    common_queue_capacity=10*batch_size,
                                                                    common_queue_min=5*batch_size)

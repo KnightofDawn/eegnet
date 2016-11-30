@@ -4,10 +4,10 @@ The main runtime file
 
 from __future__ import print_function
 import tensorflow as tf
+from eegnet.eegnet_v1 import eegnet_v1 as network
+from eegnet.read_preproc_dataset import read_dataset
 slim = tf.contrib.slim
 
-from eegnet_v2 import eegnet_v2 as network
-from read_preproc_dataset import read_dataset
 
 ##
 # Directories
@@ -106,8 +106,7 @@ def main(_):
 
         with supervi.managed_session(master='', start_standard_services=False) as sess:
             tf.logging.info('Starting evaluation.')
-            # Start queues for TFRecords reading
-            supervi.start_queue_runners(sess)
+            # Start queues for TFRecords reading supervi.start_queue_runners(sess)
 
             for i in range(int(num_batches)):
                 tf.logging.info('Executing eval_op %d/%d', i + 1, num_batches)
