@@ -2,3 +2,4 @@
 ipynb/results
 ipynb/datasets
 *.pyc
+logs

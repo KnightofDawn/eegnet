@@ -3,9 +3,10 @@
 # Quit early if any command fails.
 set -ex
 
+cd /content && \
 gcloud beta ml local train \
-  --package-path=trainer \
-  --module-name=trainer.task \
+  --package-path=src \
+  --module-name=src.train \
   --distributed \
   -- \
   --dataset_dir="/content/dataset/train/*.tfr" \

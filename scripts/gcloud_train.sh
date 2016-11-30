@@ -8,9 +8,10 @@ PROJECT_ID=`gcloud config list project --format "value(core.project)"`
 TRAIN_BUCKET=gs://${PROJECT_ID}-ml
 TRAIN_PATH=${TRAIN_BUCKET}/${JOB_NAME}
 
+cd /content && \
 gcloud beta ml jobs submit training ${JOB_NAME} \
-  --package-path=trainer \
-  --module-name=trainer.task \
+  --package-path=src \
+  --module-name=src.train \
   --staging-bucket="${TRAIN_BUCKET}" \
   --region=us-east1 \
   --config=config_gcloud.yaml \

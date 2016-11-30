@@ -6,8 +6,8 @@ import json
 import os
 
 
-from eegnet_v2 import eegnet_v2 as network
-from read_preproc_dataset import read_dataset
+from eegnet.eegnet_v2 import eegnet_v2 as network
+from eegnet.read_preproc_dataset import read_dataset
 
 ##
 # Directories

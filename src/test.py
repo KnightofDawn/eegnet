@@ -4,14 +4,14 @@ The main runtime file
 
 from __future__ import print_function
 import tensorflow as tf
+from eegnet.eegnet_v1 import eegnet_v1 as network
+from eegnet.read_preproc_dataset_eval import read_dataset
 slim = tf.contrib.slim
-from eegnet_v1 import eegnet_v1 as network
-from read_preproc_dataset import read_dataset
 
 ##
 # Directories
 ##
-tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/eval/*.tfr',
+tf.app.flags.DEFINE_string('dataset_dir', '/shared/dataset/test/*.tfr',
                            'Where dataset TFReaders files are loaded from.')
 
 tf.app.flags.DEFINE_string('checkpoint_dir', '/shared/checkpoints',
@@ -54,40 +54,42 @@ def get_init_fn():
         ignore_missing_vars=True)
 
 
+
+def save_submit(grades_list):
+    """Save the Kaggle submition file for Epilepsia Challeng"""
+
+    filep = open("submission.csv", "w") #open submition file for writing
+
+    filep.write("File,Class\n") #save header
+
+    for key in grades_list:
+        filep.write("%s,%s\n"%(key[0][0].replace('tfr', 'mat'), key[1][0][0]))
+
+    filep.close()
+
+
+
 def main(_):
     """Generates the TF graphs and loads the NN"""
+
     tf.logging.set_verbosity(tf.logging.INFO)
     with tf.Graph().as_default() as graph:
         # Input pipeline
         filenames = tf.gfile.Glob(FLAGS.dataset_dir)
-        data, labels = read_dataset(filenames,
+        data, fnames = read_dataset(filenames,
                                     num_splits=FLAGS.num_splits,
-                                    batch_size=FLAGS.batch_size,
-                                    is_training=FLAGS.is_training)
+                                    batch_size=FLAGS.batch_size)
+
         shape = data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
 
+
         # Create model
-        logits, predictions = network(data, is_training=FLAGS.is_training)
+        _, predictions = network(data, is_training=FLAGS.is_training)
+        predictions = tf.slice(predictions, [0, 1], [-1, 1]) #slicing for filename and P(1)
+
+
         tf.logging.info('Network model created.')
-
-        # Loss
-        slim.losses.softmax_cross_entropy(logits, labels, scope='loss')
-
-        # Sliced predictions and labels for AUC calculation: get last column only
-        predictions = tf.slice(predictions, [0, 1], [-1, 1])
-        labels = tf.slice(labels, [0, 1], [-1, 1])
-
-        # Define the metrics:
-        names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-            'stream_auc': slim.metrics.streaming_auc(predictions, labels),
-            'stream_loss': slim.metrics.streaming_mean(slim.losses.get_total_loss()),
-            })
-
-        # Print the summaries to screen.
-        for name, value in names_to_values.iteritems():
-            summary_name = 'eval/%s' % name
-            tf.summary.scalar(summary_name, value)
 
         # This ensures that we make a single pass over all of the data.
         num_batches = len(filenames)*FLAGS.num_splits//float(FLAGS.batch_size)
@@ -97,9 +99,8 @@ def main(_):
         #
         supervi = tf.train.Supervisor(graph=graph,
                                       logdir=FLAGS.log_dir,
-                                      summary_op=tf.merge_all_summaries(),
-                                      summary_writer=tf.train.SummaryWriter(FLAGS.log_dir),
-                                      save_summaries_secs=5,
+                                      summary_op=None,
+                                      summary_writer=None,
                                       global_step=slim.get_or_create_global_step(),
                                       init_fn=get_init_fn()) # restores checkpoint
 
@@ -108,13 +109,13 @@ def main(_):
             # Start queues for TFRecords reading
             supervi.start_queue_runners(sess)
 
+            grades = list()
             for i in range(int(num_batches)):
                 tf.logging.info('Executing eval_op %d/%d', i + 1, num_batches)
-                metric_values = sess.run(names_to_updates.values())
+                grades.append(sess.run([fnames, predictions]))
+                tf.logging.info("%s: %f"%(grades[i][0][0], grades[i][1][0]))
 
-                output = dict(zip(names_to_values.keys(), metric_values))
-                for name in output:
-                    tf.logging.info('%s: %f' % (name, output[name]))
+            save_submit(grades)
 
 
 if __name__ == '__main__':

@@ -6,12 +6,12 @@ services:
     container_name: eegnet 
     image: appia/eegnet:latest 
     build: 
-      context: ./
-      dockerfile: ./Docker/Dockerfile 
+      context: ./Docker/
+      dockerfile: /Dockerfile 
     ports:
      - "6006:6006"
      - "8888:8888"
     volumes:
-     - ./:/shared
+     - ./:/content
 
 
