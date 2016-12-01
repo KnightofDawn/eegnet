@@ -9,8 +9,6 @@ gcloud beta ml local train \
   --module-name=src.test \
   -- \
   --dataset_dir="/content/dataset/test/*.tfr" \
-  --checkpoint_dir="/content/checkpoints/gcloud_3rd_pool2400_split1_batch7" \
-  --log_dir="/content/logs" \
-  --batch_size=1 \
-  --num_splits=1
+  --checkpoint_dir="/content/checkpoints/eegnetv1_save1" \
+  --log_dir="/content/logs"
 

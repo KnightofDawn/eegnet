@@ -28,12 +28,6 @@ tf.app.flags.DEFINE_string('log_dir', '/content/logs',
 tf.app.flags.DEFINE_boolean('is_training', False,
                             'Determines shuffling, dropout/batch_norm behaviour and removal.')
 
-tf.app.flags.DEFINE_integer('num_splits', 1,
-                            'Splits to perform on each TFRecord file.')
-
-tf.app.flags.DEFINE_integer('batch_size', 1,
-                            'Training batch size.')
-
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -44,8 +38,8 @@ def main(_):
         # Input pipeline
         filenames = tf.gfile.Glob(FLAGS.dataset_dir)
         data, labels = read_dataset(filenames,
-                                    num_splits=FLAGS.num_splits,
-                                    batch_size=FLAGS.batch_size,
+                                    num_splits=1,
+                                    batch_size=1,
                                     is_training=FLAGS.is_training)
 
         shape = data.get_shape().as_list()
@@ -74,7 +68,7 @@ def main(_):
             tf.summary.scalar(summary_name, value)
 
         # This ensures that we make a single pass over all of the data.
-        num_batches = len(filenames)*FLAGS.num_splits//float(FLAGS.batch_size)
+        num_batches = len(filenames)//1.0
 
         #
         # Evaluate

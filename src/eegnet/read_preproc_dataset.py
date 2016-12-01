@@ -1,5 +1,5 @@
 """
-Preprocessing of the dataset
+Reading and Preprocessing of the dataset
 """
 
 from __future__ import print_function
@@ -11,7 +11,7 @@ def read_dataset(filenames,
                  batch_size=1,
                  is_training=True,
                  is_testing=False):
-    """Reads the entire dataset"""
+    """Reads dataset"""
     tf.logging.info("Reading #%d files." % len(filenames))
 
     ## TFRecords description for Dataset reader
@@ -47,30 +47,23 @@ def read_dataset(filenames,
                                                                    common_queue_capacity=10*batch_size,
                                                                    common_queue_min=5*batch_size)
 
-    data, label = slim.utils.smart_cond(is_testing,
-                                        lambda: data_provider.get(['data', 'filename']),
-                                        lambda: data_provider.get(['data', 'label']))
+    data, label, filename = data_provider.get(['data', 'label', 'filename'])
 
-
-    dim_pos = 1
-    if is_testing:
-        dim_pos = 0
-
-    # testing | training -> dim_pos
-    #    0          0    =    1   (eval)
-    #    0          1    =    1   (training)
-    #    1          0    =    0   (testing) 
-    #    1          1    =    x
-
-    # tf.logging.info("dim_pos=%d", dim_pos)
-    # tf.logging.info("is_testing=%d", is_testing)
-    # tf.logging.info("is_training=%d", is_training)
 
     ## Preprocess
     # Reshape data to original format: [width, channels]
-    data = tf.reshape(data, shape=[240000, 16])
-
-    if not is_testing:
+    data = tf.reshape(data, shape=[240000, 16])    
+    
+    def _norm_data(data, reduce_dim):
+        # Normalize data: mean=0 and sigma=0.5
+        data_mean = tf.expand_dims(tf.reduce_mean(data, reduction_indices=[reduce_dim]), dim=reduce_dim)
+        data = tf.sub(data, data_mean)
+        data_max = tf.expand_dims(tf.reduce_max(tf.abs(data), reduction_indices=[reduce_dim]), dim=reduce_dim)
+        data = tf.div(data, tf.mul(2.0, data_max))
+        # 3D tensor with height = 0: [height, width, channels]
+        return tf.expand_dims(data, dim=reduce_dim)
+    
+    def _train_preproc(data, label):
         # Split data, if split = 1 only expands dim: [num_splits, width, channels]
         data = tf.pack(tf.split(0, num_splits, data), axis=0)
 
@@ -79,46 +72,44 @@ def read_dataset(filenames,
         # tf.where returns a 2D Tensor. reshape it to 1D
         idx_clean = tf.reshape(tf.where(tf.greater(var, 0.5)), shape=[-1])
 
-        # Remove dropout segments based on training flag
-        data = slim.utils.smart_cond(is_training,
-                                     lambda: tf.gather(data, idx_clean),
-                                     lambda: data)
-
-
-
-    # Normalize: mean=0 and sigma=0.5
-    data_mean = tf.expand_dims(tf.reduce_mean(data, reduction_indices=[dim_pos]), dim=dim_pos)
-    data = tf.sub(data, data_mean)
-    data_max = tf.expand_dims(tf.reduce_max(tf.abs(data), reduction_indices=[dim_pos]), dim=dim_pos)
-    data = tf.div(data, tf.mul(2.0, data_max))
-
-    # 3D tensor with height = 0: [height, width, channels]
-    # 4D tensor with height = 1: [batch, height, width, channels]
-    data = tf.expand_dims(data, dim=dim_pos)
-
-    if not is_testing:
+        # Remove dropout segments
+        data = tf.gather(data, idx_clean)
+        
         # Create label array of segments
         num_segments = tf.shape(data)[0]
         label = tf.one_hot(label, 2, dtype=tf.int32)
         label = tf.reshape(tf.tile(label, [num_segments]), shape=[num_segments, 2])
-
-
-
-
+    
+        # Normalize data along dimension 1, dim=0 is splits
+        data = _norm_data(data, 1)
+        return [data, label]
+    
+    def _eval_preproc(data, label):
+        return [_norm_data(data, 0), tf.one_hot(label, 2, dtype=tf.int32)]
+    
+    def _test_preproc(data, filename):
+        return [_norm_data(data, 0), filename]
+    
     ## Batch 4D tensor: [batch, height, width, channels]
-    shuffle_batch_fn = lambda: tf.train.shuffle_batch([data, label],
-                                                      batch_size=batch_size,
-                                                      capacity=5*num_splits*batch_size,
-                                                      min_after_dequeue=3*num_splits*batch_size,
-                                                      num_threads=1,
-                                                      enqueue_many=True)
+    _capacity = 5*num_splits*batch_size    
+    _train_batch = lambda: tf.train.shuffle_batch(_train_preproc(data, label),
+                                                  batch_size=batch_size,
+                                                  capacity=_capacity,
+                                                  min_after_dequeue=3*num_splits*batch_size,
+                                                  num_threads=1,
+                                                  enqueue_many=True)
 
-    batch_fn = lambda: tf.train.batch([data, label],
-                                      batch_size=batch_size,
-                                      capacity=5*num_splits*batch_size,
-                                      num_threads=1,
-                                      enqueue_many=not is_testing)
+    _eval_batch = lambda: tf.train.batch(_eval_preproc(data, label),
+                                         batch_size=batch_size,
+                                         capacity=_capacity,
+                                         num_threads=1)
+    
+    _test_batch = lambda: tf.train.batch(_test_preproc(data, filename),
+                                         batch_size=batch_size,
+                                         capacity=_capacity,
+                                         num_threads=1)
 
-    data, label = slim.utils.smart_cond(is_training, shuffle_batch_fn, batch_fn)
+    _eval_test_batch = lambda: slim.utils.smart_cond(is_testing, _test_batch, _eval_batch)
 
-    return data, label
+    return slim.utils.smart_cond(is_training, _train_batch, _eval_test_batch)
+
