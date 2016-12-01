@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 from eegnet.eegnet_v1 import eegnet_v1 as network
 from eegnet.eegnet_v1 import get_init_fn
-from eegnet.read_preproc_dataset_eval import read_dataset
+from eegnet.read_preproc_dataset import read_dataset
 slim = tf.contrib.slim
 
 
@@ -61,7 +61,9 @@ def main(_):
         filenames = tf.gfile.Glob(FLAGS.dataset_dir)
         data, fnames = read_dataset(filenames,
                                     num_splits=FLAGS.num_splits,
-                                    batch_size=FLAGS.batch_size)
+                                    batch_size=FLAGS.batch_size,
+                                    is_training=FLAGS.is_training,
+                                    is_testing=True)
 
         shape = data.get_shape().as_list()
         tf.logging.info('Batch size/num_points: %d/%d' % (shape[0], shape[2]))
