@@ -1,6 +1,31 @@
+"""
+The NN basic methods
+"""
+
 from __future__ import print_function
 import tensorflow as tf
 slim = tf.contrib.slim
+
+
+def get_init_fn(checkpoint_dir, continue_oncheck=False):
+    """Loads the NN"""
+    if checkpoint_dir is None:
+        if continue_oncheck:
+            return None
+        else:
+            raise ValueError('No checkpoint provided, using --checkpoint_dir')
+
+    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+
+    if checkpoint_path is None:
+        raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' %
+                         checkpoint_dir)
+
+    tf.logging.info('Loading model from %s', checkpoint_path)
+
+    return slim.assign_from_checkpoint_fn(model_path=checkpoint_path,
+                                          var_list=slim.get_model_variables(),
+                                          ignore_missing_vars=True)
 
 
 def dilated_block(hidden, rate, outsize, scope):

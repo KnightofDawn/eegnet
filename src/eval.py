@@ -79,7 +79,7 @@ def main(_):
                                       summary_writer=tf.train.SummaryWriter(FLAGS.log_dir),
                                       save_summaries_secs=5,
                                       global_step=slim.get_or_create_global_step(),
-                                      init_fn=get_init_fn()) # restores checkpoint
+                                      init_fn=get_init_fn(FLAGS.checkpoint_dir)) # restores checkpoint
 
         with supervi.managed_session(master='', start_standard_services=False) as sess:
             tf.logging.info('Starting evaluation.')

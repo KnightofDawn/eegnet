@@ -2,6 +2,10 @@ FROM tensorflow/tensorflow:0.12.0-rc0
 
 MAINTAINER Nuno Silva <nuno.mgomes.silva@gmail.com>
 
+# References: 
+# - https://github.com/googledatalab/datalab/blob/master/containers/base/Dockerfile
+# - https://cloud.google.com/ml/docs/how-tos/getting-set-up  [Setting up your environment - LOCAL: MAC/LINUX]
+
 # Path configuration
 ENV PATH $PATH:/tools/google-cloud-sdk/bin
 

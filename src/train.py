@@ -145,7 +145,7 @@ def worker_ps_fn(cluster, task):
                             master=target,
                             is_chief=is_master,
                             number_of_steps=FLAGS.num_iters,
-                            init_fn=get_init_fn(True),
+                            init_fn=get_init_fn(FLAGS.checkpoint_dir, True),
                             session_config=config,
                             log_every_n_steps=5,
                             save_summaries_secs=15,

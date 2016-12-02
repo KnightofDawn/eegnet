@@ -7,29 +7,25 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-FLAGS = tf.app.flags.FLAGS
-
-
-def get_init_fn(continue_oncheck=False):
+def get_init_fn(checkpoint_dir, continue_oncheck=False):
     """Loads the NN"""
-    if FLAGS.checkpoint_dir is None:
+    if checkpoint_dir is None:
         if continue_oncheck:
             return None
         else:
             raise ValueError('No checkpoint provided, using --checkpoint_dir')
 
-    checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
+    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
 
     if checkpoint_path is None:
         raise ValueError('No checkpoint found in %s. Supply a valid --checkpoint_dir' %
-                         FLAGS.checkpoint_dir)
+                         checkpoint_dir)
 
     tf.logging.info('Loading model from %s', checkpoint_path)
 
     return slim.assign_from_checkpoint_fn(model_path=checkpoint_path,
                                           var_list=slim.get_model_variables(),
                                           ignore_missing_vars=True)
-
 
 
 def dilated_block(hidden, rate, scope):
@@ -52,7 +48,6 @@ def dilated_block(hidden, rate, scope):
                              normalizer_fn=None, activation_fn=None, scope='1x1toRes')
         # Add output and residual -> input for next layer
         return tf.add(hidden, layer_input)
-
 
 
 def eegnet_v1(inputs,
