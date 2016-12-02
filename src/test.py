@@ -64,10 +64,10 @@ def main(_):
 
         # Create model
         _, predictions = network(data, is_training=FLAGS.is_training)
-        predictions = tf.slice(predictions, [0, 1], [-1, 1]) #slicing for filename and P(1)
-
-
         tf.logging.info('Network model created.')
+        
+        # Sliced predictions for AUC calculation: get last column only
+        predictions = tf.slice(predictions, [0, 1], [-1, 1])        
 
         # This ensures that we make a single pass over all of the data.
         num_batches = len(filenames)//1.0
@@ -79,8 +79,9 @@ def main(_):
                                       logdir=FLAGS.log_dir,
                                       summary_op=None,
                                       summary_writer=None,
+                                      saver=None,
                                       global_step=slim.get_or_create_global_step(),
-                                      init_fn=get_init_fn(FLAGS.checkpoint_dir)) # restores checkpoint
+                                      init_fn=get_init_fn(FLAGS.checkpoint_dir)) # restores from checkpoint
 
         with supervi.managed_session(master='', start_standard_services=False) as sess:
             tf.logging.info('Starting evaluation.')

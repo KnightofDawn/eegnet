@@ -73,13 +73,15 @@ def main(_):
         #
         # Evaluate
         #
+        # TODO(nsilva): saver=USE_DEFAULT and managed_session() will load from checkpoint in 'logdir' instead of 'init_fn'!
+        #               This is solved in test.py by save=None but if done here then no summaries will be written.
         supervi = tf.train.Supervisor(graph=graph,
                                       logdir=FLAGS.log_dir,
                                       summary_op=tf.merge_all_summaries(),
                                       summary_writer=tf.train.SummaryWriter(FLAGS.log_dir),
                                       save_summaries_secs=5,
                                       global_step=slim.get_or_create_global_step(),
-                                      init_fn=get_init_fn(FLAGS.checkpoint_dir)) # restores checkpoint
+                                      init_fn=get_init_fn(FLAGS.checkpoint_dir)) # restores from checkpoint
 
         with supervi.managed_session(master='', start_standard_services=False) as sess:
             tf.logging.info('Starting evaluation.')
