@@ -120,6 +120,17 @@ eegnet_v1 achieved the abovementioned results with only a **~10 epochs** of trai
 <a id='TrainEvalTest'></a>
 Make use of the provided gcloud scripts for local and cloud training, evaluation and test (kaggle submission).
 
-## Train
+#### Train single example
+From inside the container run:
+```
+bash scripts/local_train_single.sh
+```
+
+#### Train distributed example
+```
+bash scripts/local_train_distributed.sh
+```
+gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG.
+
 It is advised to train using `batch_size > 1` and `num_splits = 1`, altough in a laptop you can easily run out of memory.
 
