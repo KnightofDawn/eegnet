@@ -38,7 +38,7 @@ This will start the container in detached mode and Jupyter will be accessible th
 docker-compose exec eegnet bash
 ```
 
-#### Train network:
+To train the network from inside the container:
 ```
 bash scripts/local_train_single.sh
 ```
@@ -53,7 +53,7 @@ python src/train.py \
 ```
 
 #### Basic folder structure
-`data/` Folder where \*.mat files are expected to be for conversion to TFRecords.
+`data/` Folder where [\*.mat files from the competition](https://www.kaggle.com/c/melbourne-university-seizure-prediction/data) are expected to be for conversion to TFRecords.
 
 `dataset/` Folder where \*.tfr files are expected to be for network input.
 
@@ -133,17 +133,22 @@ The main constraint on using eegnet directly on raw data is the computational re
 ## Train, evaluate and test eegnet
 <a id='TrainEvalTest'></a>
 
-#### Train - single
+#### Train locally - single
 From inside the container run:
 ```
 bash scripts/local_train_single.sh
 ```
 
-#### Train - distributed
+#### Train locally - distributed
 ```
 bash scripts/local_train_distributed.sh
 ```
 With `--distributed` gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG. Check [code](https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/mnist/distributed/trainer/task.py).
 
+#### Train gcloud - distributed
+Follow the [gcloud init steps](https://cloud.google.com/ml/docs/how-tos/getting-set-up) to setup a gcloud project, bucket using your google account, then simply run `bash scripts/gcloud_train.sh`.
+
+#### Eval and test
+Evaluation and test also have dedicated scripts and in the case of 
 It is advised to train using `batch_size > 1` and `num_splits = 1`, altough in a laptop you can easily run out of memory.
 
