@@ -56,7 +56,7 @@ def eegnet_v1(inputs,
               is_training=True,
               scope='eegnet_v1'):
     """The Total NN"""
-    with tf.variable_scope(scope, 'eegnet_v1', reuse=reuse):
+    with tf.variable_scope(scope, 'eegnet_v1', [inputs], reuse=reuse):
         with slim.arg_scope([slim.batch_norm, slim.dropout],
                             is_training=is_training):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],

@@ -4,7 +4,7 @@ version: '2'
 services:
   eegnet:
     container_name: eegnet 
-    image: appia/eegnet:latest 
+    image: projectappia/eegnet:latest 
     build: 
       context: ./Docker/
       dockerfile: /Dockerfile 
