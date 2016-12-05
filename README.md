@@ -5,19 +5,39 @@ Google DeepMind's WaveNet neural network implementation for epileptic seizures d
 ## Intro
 This code was developed for the [Kaggle - Melbourne University Seizure Prediction](https://www.kaggle.com/c/melbourne-university-seizure-prediction), where **eegnet_v1 achieved AUC = 0.63 with just ~10 epochs (which took 15h) in [Google Cloud Machine Learning](https://cloud.google.com/ml/)**. No GPUs were used due to unavailability, although its is highly recomended.
 
+
 #### Features:
 - Code developed using [TensorFlow-Slim](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim).
+- Data input using [TFRecords](https://www.tensorflow.org/versions/r0.12/how_tos/reading_data/index.html#reading-data) with [TF-Slim Dataset Descriptor](https://github.com/tensorflow/models/tree/master/slim)
 - Train code runs in single machine or distributed  - [Between-graph replication](https://www.tensorflow.org/versions/r0.12/how_tos/distributed/index.html#replicated-training)
 - Scripts to run in gcloud.
 
 
+## Table of contents
+
+<a href="#Install">Installation and setup</a><br>
+<a href='#Motivation'>Motivation</a><br>
+<a href='#Data_challenge'>Dataset and challenge</a><br>
+<a href='#eegnet_network'>eegnet network</a><br>
+<a href='#Train'>Training eegnet</a><br>
+<a href='#Eval'>Evaluating</a><br>
+<a href='#Submit'>Generate submission</a><br>
+
+## Installation and setup
+<a id='Install'></a>
+
+
 ## Motivation
+<a id='Motivation'></a>
+
 The intent was from the beggining to use a neural network inspired on [Google DeepMind's WaveNet](https://arxiv.org/pdf/1609.03499.pdf) direclty on raw iEEG data.
 
 Reading the WaveNet paper was truly inspirational: a demonstration of the power of deep neural networks in extracting relevant features directly from raw audio data. **It is a perfect fit for other kinds of challenging raw data such as brain waves!**
 
 
-## [Data & Challenge](https://www.kaggle.com/c/melbourne-university-seizure-prediction/data)
+## [Dataset and challenge](https://www.kaggle.com/c/melbourne-university-seizure-prediction/data)
+<a id='Data_challenge'></a>
+
 - 10 min segments at 400Hz - 240000 points
 - 16 input channels
 - 5047 training files (80/20 split for validation)
@@ -28,6 +48,8 @@ Reading the WaveNet paper was truly inspirational: a demonstration of the power 
 
 
 ## eegnet network
+<a id='eegnet_network'></a>
+
 The TF network code can be found in [eegnet/src/eegnet/eegnet_vX.py](https://github.com/projectappia/eegnet/tree/master/src/eegnet).
 
 The main difference between wavenet and eegnet resides in eegnet being trained only with a classifcation loss. Due to the nature of the data, 16 input channels, it was discarded training the network also predicting the next sample point. This compromise, on the other hand, allows eegnet to be applied directly on raw data of 16 input channels, without any companding transformation as in WaveNet.
@@ -64,4 +86,19 @@ With more computation resources it would be interesting to try different optimiz
 The main constraint on using eegnet directly on raw data is the computational resources necessary. GPUs are highly recomended but were still unavailable in gcloud at the time of development of this project. AWS is also being investigated but nothing to report at the moment still.
 
 eegnet_v1 achieved the abovementioned results with only a **~10 epochs** of training and having only **6 dilated blocks**. With more epochs and a network with 20+ dilated blocks as WaveNet, we believe the AUC results would have been truly inspiring.
+
+
+## Training eegnet
+<a id='Train'></a>
+
+
+
+## Evaluating
+<a id='Eval'></a>
+
+
+
+## Generate submission
+<a id='Submit'></a>
+
 
