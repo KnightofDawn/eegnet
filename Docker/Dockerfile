@@ -13,6 +13,7 @@ ENV PATH $PATH:/tools/google-cloud-sdk/bin
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	wget \
     unzip \
+    supervisor \
     python-dev \ 
     python-pip \
     zlib1g-dev \
@@ -69,7 +70,12 @@ RUN pip install --upgrade --force-reinstall \
     mv cloudml-samples-master/ samples/
     
 # Manage container shared folders
-RUN rm -rf /content/*
+RUN rm -rf /content/* 
+
+#copy tensorboard run script
+COPY etc /etc/
+COPY opt /opt/
+
 WORKDIR /content
 VOLUME ["/content"]
-CMD ["/run_jupyter.sh"]
+CMD ["/opt/run.sh"]
