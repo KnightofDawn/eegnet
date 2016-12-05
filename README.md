@@ -23,19 +23,33 @@ This code was developed for the [Kaggle - Melbourne University Seizure Predictio
 
 ## Installation and setup
 <a id='Install'></a>
-Install `docker-compose`:
+#### Install `docker-compose`:
 ```
 sudo pip install docker-compose --force --upgrade
 ```
-Run container:
+#### Run container:
 ```
 docker-compose up -d
 ```
 This will start the container in detached mode and Jupyter will be accessible through `localhost:8888`.
 
-Access container bash:
+#### Access container bash:
 ```
 docker-compose exec eegnet bash
+```
+
+#### Train network:
+```
+bash scripts/local_train_single.sh
+```
+or
+```
+python src/train.py \
+  --dataset_dir="/content/dataset/train/*.tfr" \
+  --log_dir="/content/logs" \
+  --batch_size=3 \
+  --num_splits=5 \
+  --num_iters=5000
 ```
 
 #### Basic folder structure
@@ -55,7 +69,7 @@ tensorboard --logdir=path/to/log-directory
 ## Motivation
 <a id='Motivation'></a>
 
-The intent was from the beggining to use a neural network inspired on [Google DeepMind's WaveNet](https://arxiv.org/pdf/1609.03499.pdf) direclty on raw iEEG data.
+From the beggining the intent was to use a neural network inspired on [Google DeepMind's WaveNet](https://arxiv.org/pdf/1609.03499.pdf) direclty on raw iEEG data.
 
 Reading the WaveNet paper was truly inspirational: a demonstration of the power of deep neural networks in extracting relevant features directly from raw audio data. **It is a perfect fit for other kinds of challenging raw data such as brain waves!**
 
@@ -101,36 +115,35 @@ As in WaveNet use for speech recognition, an **average pool layer** is placed on
 
 #### Lessons learnt:
 - Weights and biases regularization and dropout are essential to fight overfitting.
-- Start train in a small train dataset and small network, if using Inception or WaveNet blocks, implement blocks but keep number small. This approach helps to detect implementation mistakes earlier, perform quick iterations to decide on architecture and should already converge, giving you confidence over the chosen approach.
+- Start training with a small train dataset and network, if using Inception or WaveNet blocks, implement blocks but keep number small. This approach helps to detect implementation mistakes early, perform quick iterations to decide on architecture and should already converge, giving you confidence over the chosen approach.
 - With stacked convolution layers the total receptive field increases with depth increase. Atrous/dilated convolutions increases the effect even more while keeping computation down.
 - With residual connections don't apply activation and normalization functions.
 - Almost always use activation and normalization functions between layers, even in 1x1 (compress/expand) convolutions.
 - Last fully connected layer before softmax do not use activation or normalization functions.
 - It's good practice to use a 1x1 feature compressing layer before a 3x3/5x5/7x7 convolution. Makes computation faster and uses proven embeddings principle of data representation.
 - Always normalize input data with mean = 0 and std < 1, the later is important as well to avoid [activation functions saturation](http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf).
-- Don't look only into minibatch loss, minibatch and validation accuracy are as important.
+- When inspecting network train take into consideration minibatch loss and accuracy and validation accuracy (great measurement of network overift).
 
 #### Important:
 The main constraint on using eegnet directly on raw data is the computational resources necessary. GPUs are highly recomended but were still unavailable in gcloud at the time of development of this project. AWS is also being investigated but nothing to report at the moment still.
 
-eegnet_v1 achieved the abovementioned results with only a **~10 epochs** of training and having only **6 dilated blocks**. With more epochs and a network with 20+ dilated blocks as WaveNet, we believe the AUC results would have been truly inspiring.
+> eegnet_v1 achieved the abovementioned results with only **~10 epochs** of training and having only **6 dilated blocks**. With more epochs and a network with 20+ dilated blocks as WaveNet, we believe the AUC results would have been truly inspiring.
 
 
 ## Train, evaluate and test eegnet
 <a id='TrainEvalTest'></a>
-Make use of the provided gcloud scripts for local and cloud training, evaluation and test (kaggle submission).
 
-#### Train single example
+#### Train - single
 From inside the container run:
 ```
 bash scripts/local_train_single.sh
 ```
 
-#### Train distributed example
+#### Train - distributed
 ```
 bash scripts/local_train_distributed.sh
 ```
-gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG.
+With `--distributed` gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG. Check [code](https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/mnist/distributed/trainer/task.py).
 
 It is advised to train using `batch_size > 1` and `num_splits = 1`, altough in a laptop you can easily run out of memory.
 
