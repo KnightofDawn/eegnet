@@ -31,7 +31,7 @@ def get_init_fn(checkpoint_dir, continue_oncheck=False):
 def dilated_block(hidden, rate, outsize, scope):
     with tf.variable_scope(scope):
         # Dilated convolution. NO nonlinear and batch norm!
-        hidden = slim.conv2d(hidden, outsize, [1, 3], rate=rate, normalizer_fn=None, 
+        hidden = slim.convolution(hidden, outsize, [1, 3], rate=rate, normalizer_fn=None, 
                              activation_fn=None, scope='dilconv')
         # Split features (dim=3) in half
         filtr, gate = tf.split(3, 2, hidden)
@@ -46,18 +46,17 @@ def eegnet_v2(inputs,
               is_training=True,
               scope='eegnet_v2'):
     
-    with tf.variable_scope(scope, 'eegnet_v2', reuse=reuse):
-        
+    with tf.variable_scope(scope, 'eegnet_v2', [inputs], reuse=reuse):        
         with slim.arg_scope([slim.batch_norm, slim.dropout], 
                             is_training=is_training):
-            with slim.arg_scope([slim.conv2d, slim.fully_connected], 
+            with slim.arg_scope([slim.convolution, slim.fully_connected], 
                                 activation_fn=tf.nn.relu, 
                                 weights_regularizer=slim.l2_regularizer(weight_decay),
                                 biases_regularizer=slim.l2_regularizer(weight_decay),
                                 normalizer_fn=slim.batch_norm):
                 
                 with tf.variable_scope('input_layer'):
-                    hidden = slim.conv2d(inputs, 8, [1, 3], scope='conv1')
+                    hidden = slim.convolution(inputs, 8, [1, 3], scope='conv1')
                 
                 with tf.variable_scope('hidden'):
                     hidden = dilated_block(hidden, 2, 16, 'layer1')
@@ -68,11 +67,11 @@ def eegnet_v2(inputs,
                     hidden = slim.avg_pool2d(hidden, [1, batch_num_points*2//2400], [1, batch_num_points//2400])
                     
                     # 1 x 2400 x 32
-                    hidden = slim.conv2d(hidden, 16, 1, scope='1x1compress')
+                    hidden = slim.convolution(hidden, 16, 1, scope='1x1compress')
                     # 1 x 2400 x 16
-                    hidden = slim.conv2d(hidden, 8, [1, 5], stride=3, scope='1x3reduce1')
+                    hidden = slim.convolution(hidden, 8, [1, 5], stride=3, scope='1x3reduce1')
                     # 1 x 800 x 8
-                    hidden = slim.conv2d(hidden, 2, [1, 7], stride=5, scope='1x3reduce2')
+                    hidden = slim.convolution(hidden, 2, [1, 7], stride=5, scope='1x3reduce2')
                     # 1 x 160 x 2
                     
                     hidden = slim.flatten(hidden)
