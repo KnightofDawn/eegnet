@@ -72,10 +72,10 @@ RUN pip install --upgrade --force-reinstall \
 # Manage container shared folders
 RUN rm -rf /content/* 
 
-#copy tensorboard run script
-COPY etc /etc/
-COPY opt /opt/
+#copy supervisord configurations 
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 
 WORKDIR /content
 VOLUME ["/content"]
-CMD ["/opt/run.sh"]
+CMD ["/usr/bin/supervisord"]
