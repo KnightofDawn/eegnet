@@ -147,7 +147,7 @@ bash scripts/local_train_single.sh
 ```
 bash scripts/local_train_distributed.sh
 ```
-With `--distributed` gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG. Check [code](https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/mnist/distributed/trainer/task.py).
+With `--distributed` gcloud automatically launches several python instances which are configure with a json loaded environment variable TF_CONFIG. Find an example [here](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/learn/python/learn/estimators/run_config.py) or check [gcloud distributed example code](https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/mnist/distributed/trainer/task.py).
 
 #### Train gcloud - distributed
 Follow the [gcloud init steps](https://cloud.google.com/ml/docs/how-tos/getting-set-up) to setup a gcloud project and bucket using a google account, then simply run `bash scripts/gcloud_train.sh`.
