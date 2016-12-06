@@ -59,6 +59,8 @@ python src/train.py \
 
 `checkpoints/` Pre-trained eegnet models.
 
+`checkpoints/eegnetv1_save1/`. eegnet_v1 model which achieved AUC = 0.63
+
 #### Tensorboard
 To access [Tensorboard](https://www.tensorflow.org/versions/r0.12/how_tos/summaries_and_tensorboard/index.html) run the following inside the container:
 ```
