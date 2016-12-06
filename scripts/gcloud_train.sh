@@ -24,7 +24,7 @@ gcloud beta ml jobs submit training ${JOB_NAME} \
   --config=/content/scripts/config_gcloud.yaml \
   -- \
   --dataset_dir="${TRAIN_BUCKET}/train/*.tfr" \
-  --checkpoint_dir="${TRAIN_BUCKET}/checkpoints/second_pool2400_split1_batch3" \
+  --checkpoint_dir="${TRAIN_BUCKET}/checkpoints/third_pool2400_split1_batch7" \
   --log_dir="${TRAIN_PATH}" \
   --batch_size=7 \
   --num_splits=1 \
