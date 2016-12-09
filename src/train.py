@@ -132,12 +132,12 @@ def worker_ps_fn(cluster, task):
             predictions = tf.slice(predictions, [0, 1], [-1, 1])
             labels = tf.slice(labels, [0, 1], [-1, 1])
             tf.summary.scalar('batch_stats/stream_auc',
-                              slim.metrics.streaming_auc(predictions, labels)[0])
+                              slim.metrics.streaming_auc(predictions, labels)[1])
 
             # Batch mixture: true labels / total labels
             mix = tf.div(tf.to_float(tf.reduce_sum(labels, 0)), FLAGS.batch_size)
             tf.summary.scalar('batch_stats/stream_labels_ratio',
-                              slim.metrics.streaming_mean(mix)[0])
+                              slim.metrics.streaming_mean(mix)[1])
 
         # Run the training
         slim.learning.train(train_op,
